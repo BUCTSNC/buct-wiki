@@ -51,7 +51,7 @@ export const footerLinkGroups: FooterLinkGroup[] = [
 	{
 		name: '参与共建',
 		links: [
-			{ name: '参与编辑', href: 'https://github.com/BUCT-WIKI/buct-wiki-content' },
+			{ name: '参与编辑', href: 'https://github.com/BUCTSNC/buct-wiki-content' },
 			{ name: '内容反馈', feedback: true },
 		],
 	},

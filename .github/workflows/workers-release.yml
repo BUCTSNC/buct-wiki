@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.repository == 'BUCT-WIKI/buct-wiki' && github.ref == 'refs/heads/main'
+    if: github.repository == 'BUCTSNC/buct-wiki' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

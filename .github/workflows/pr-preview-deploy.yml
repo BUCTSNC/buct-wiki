@@ -22,7 +22,7 @@ concurrency:
 jobs:
   deploy:
     if: >-
-      (github.repository == 'BUCT-WIKI/buct-wiki' || github.repository == 'BUCT-WIKI/buct-wiki-content') &&
+      (github.repository == 'BUCTSNC/buct-wiki' || github.repository == 'BUCTSNC/buct-wiki-content') &&
       github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -30,8 +30,8 @@ jobs:
       # workflow_run uses the default branch, never the pull request checkout.
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          repository: BUCT-WIKI/buct-wiki
-          ref: ${{ github.repository == 'BUCT-WIKI/buct-wiki' && github.sha || 'main' }}
+          repository: BUCTSNC/buct-wiki
+          ref: ${{ github.repository == 'BUCTSNC/buct-wiki' && github.sha || 'main' }}
           path: trusted
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
