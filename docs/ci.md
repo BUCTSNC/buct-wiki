@@ -65,10 +65,10 @@ Astro 仍输出静态站点到 `dist/`。匹配的 HTML、CSS、JS 和图片由 
 
 ### GitHub App 配置
 
-1. 在 `BUCT-WIKI` 组织的 **Settings → Developer settings → GitHub Apps** 创建 App。Homepage URL 可以填写模板仓库网址；关闭 Webhook，不需要回调地址或额外服务器。安装范围选择仅当前账户。
+1. 在 `BUCTSNC` 组织的 **Settings → Developer settings → GitHub Apps** 创建 App。Homepage URL 可以填写模板仓库网址；关闭 Webhook，不需要回调地址或额外服务器。安装范围选择仅当前账户。
 2. Repository permissions 仅授予 **Contents: Read and write**；Metadata 为默认只读，不需要 Actions、Workflows 或组织权限。
-3. 将 App 安装到 `BUCT-WIKI`，选择 **Only select repositories → buct-wiki**。App 只需访问接收通知的模板仓库。
-4. 在 App 设置中复制 **Client ID**，并通过 **Generate a private key** 下载 PEM 私钥。在内容仓库 `BUCT-WIKI/buct-wiki-content` 的 **Settings → Secrets and variables → Actions** 配置：
+3. 将 App 安装到 `BUCTSNC`，选择 **Only select repositories → buct-wiki**。App 只需访问接收通知的模板仓库。
+4. 在 App 设置中复制 **Client ID**，并通过 **Generate a private key** 下载 PEM 私钥。在内容仓库 `BUCTSNC/buct-wiki-content` 的 **Settings → Secrets and variables → Actions** 配置：
 
    | 类型 | 名称 | 值 |
    | --- | --- | --- |

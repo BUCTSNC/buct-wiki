@@ -75,7 +75,7 @@ test('preview publishing rejects symbolic links and missing index pages before c
 
 test('deployments only target an open PR at the exact build commit in this repository', async () => {
 	const context = {
-		repo: { owner: 'BUCT-WIKI', repo: 'buct-wiki' },
+		repo: { owner: 'BUCTSNC', repo: 'buct-wiki' },
 		payload: { workflow_run: {
 			event: 'pull_request', conclusion: 'success',
 			path: '.github/workflows/pr-preview-build.yml', head_sha: 'abc123',
@@ -85,7 +85,7 @@ test('deployments only target an open PR at the exact build commit in this repos
 	const pr = { number: 12, state: 'open', head: {
 		sha: 'abc123', ref: 'feature', repo: { full_name: 'contributor/wiki' },
 	},
-		base: { ref: 'main', repo: { full_name: 'BUCT-WIKI/buct-wiki' } } };
+		base: { ref: 'main', repo: { full_name: 'BUCTSNC/buct-wiki' } } };
 	let pulls = [pr];
 	const github = { rest: { repos: { listPullRequestsAssociatedWithCommit: {} } },
 		paginate: async (_method, args) => {
@@ -118,19 +118,19 @@ test('deployments only target an open PR at the exact build commit in this repos
 test('content PR matching uses the content repository, not a same-number template PR', async () => {
 	const pr = { number: 12, state: 'open',
 		head: { sha: 'content-sha', ref: 'article', repo: { full_name: 'author/content' } },
-		base: { ref: 'main', repo: { full_name: 'BUCT-WIKI/buct-wiki-content' } } };
-	const context = { repo: { owner: 'BUCT-WIKI', repo: 'buct-wiki-content' },
+		base: { ref: 'main', repo: { full_name: 'BUCTSNC/buct-wiki-content' } } };
+	const context = { repo: { owner: 'BUCTSNC', repo: 'buct-wiki-content' },
 		payload: { workflow_run: { event: 'pull_request', conclusion: 'success',
 			path: '.github/workflows/pr-preview-build.yml', head_sha: 'content-sha',
 			head_repository: pr.head.repo, head_branch: 'article' } } };
 	const github = { rest: { repos: { listPullRequestsAssociatedWithCommit: {} } },
-		paginate: async () => [pr, { ...pr, base: { ...pr.base, repo: { full_name: 'BUCT-WIKI/buct-wiki' } } }] };
+		paginate: async () => [pr, { ...pr, base: { ...pr.base, repo: { full_name: 'BUCTSNC/buct-wiki' } } }] };
 	assert.equal(await previewDeploy.findPullRequest(github, context), pr);
 });
 
 function reportingFixture() {
 	const context = {
-		repo: { owner: 'BUCT-WIKI', repo: 'buct-wiki' }, serverUrl: 'https://github.com', runId: 100,
+		repo: { owner: 'BUCTSNC', repo: 'buct-wiki' }, serverUrl: 'https://github.com', runId: 100,
 		payload: { workflow_run: { conclusion: 'success', id: 99 } },
 	};
 	const pr = { number: 12, state: 'open', head: { sha: 'abc123' } };

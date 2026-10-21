@@ -3,8 +3,8 @@ const { join } = require('node:path');
 
 function previewPrefix(repository) {
 	switch (repository) {
-		case 'BUCT-WIKI/buct-wiki': return 'pr-';
-		case 'BUCT-WIKI/buct-wiki-content': return 'content-pr-';
+		case 'BUCTSNC/buct-wiki': return 'pr-';
+		case 'BUCTSNC/buct-wiki-content': return 'content-pr-';
 		default: throw new Error(`Unsupported preview repository: ${repository}`);
 	}
 }

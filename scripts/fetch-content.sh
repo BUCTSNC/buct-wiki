@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-repository="${CONTENT_GIT_URL:-https://github.com/BUCT-WIKI/buct-wiki-content.git}"
+repository="${CONTENT_GIT_URL:-https://github.com/BUCTSNC/buct-wiki-content.git}"
 ref="${CONTENT_GIT_REF:-main}"
 content_dir="${CONTENT_DIR:-src/content/docs/content}"
 

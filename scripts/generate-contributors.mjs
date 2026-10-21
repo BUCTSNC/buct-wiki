@@ -3,7 +3,7 @@ import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, relative, sep } from 'node:path';
 
 const token = process.env.GITHUB_TOKEN;
-const repository = process.env.CONTENT_GITHUB_REPOSITORY ?? 'BUCT-WIKI/buct-wiki-content';
+const repository = process.env.CONTENT_GITHUB_REPOSITORY ?? 'BUCTSNC/buct-wiki-content';
 const contentDir = process.env.CONTENT_DIR ?? 'src/content/docs/content';
 const output = '.output/contributors.json';
 const lastModifiedOutput = '.output/last-modified.json';
