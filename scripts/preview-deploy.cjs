@@ -13,7 +13,7 @@ async function findPullRequest(github, context) {
 	const run = context.payload.workflow_run;
 	if (run.event !== 'pull_request' || !run.conclusion ||
 		!run.head_repository?.full_name || !run.head_branch ||
-		run.path !== '.github/workflows/pr-preview-build.yml') return null;
+		run.path !== '.github/workflows/ci.yml') return null;
 	const pulls = await github.paginate(github.rest.pulls.list, {
 		...context.repo, state: 'open', base: 'main',
 		head: `${run.head_repository.full_name.split('/')[0]}:${run.head_branch}`,

@@ -79,7 +79,7 @@ test('fork PR matching works when commit associations and workflow pull_requests
 		base: { ref: 'main', repo: { full_name: 'BUCTSNC/buct-wiki' } } };
 	const context = { repo: { owner: 'BUCTSNC', repo: 'buct-wiki' },
 		payload: { workflow_run: { event: 'pull_request', conclusion: 'success',
-			path: '.github/workflows/pr-preview-build.yml', head_sha: pr.head.sha,
+			path: '.github/workflows/ci.yml', head_sha: pr.head.sha,
 			head_repository: pr.head.repo, head_branch: pr.head.ref, pull_requests: [] } } };
 	const github = {
 		rest: { repos: { listPullRequestsAssociatedWithCommit: 'commit-pulls' }, pulls: { list: 'pulls' } },
@@ -99,7 +99,7 @@ test('deployments only target an open PR at the exact build commit in this repos
 		repo: { owner: 'BUCTSNC', repo: 'buct-wiki' },
 		payload: { workflow_run: {
 			event: 'pull_request', conclusion: 'success',
-			path: '.github/workflows/pr-preview-build.yml', head_sha: 'abc123',
+			path: '.github/workflows/ci.yml', head_sha: 'abc123',
 			head_repository: { full_name: 'contributor/wiki' }, head_branch: 'feature',
 		} },
 	};
@@ -142,7 +142,7 @@ test('content PR matching uses the content repository, not a same-number templat
 		base: { ref: 'main', repo: { full_name: 'BUCTSNC/buct-wiki-content' } } };
 	const context = { repo: { owner: 'BUCTSNC', repo: 'buct-wiki-content' },
 		payload: { workflow_run: { event: 'pull_request', conclusion: 'success',
-			path: '.github/workflows/pr-preview-build.yml', head_sha: 'content-sha',
+			path: '.github/workflows/ci.yml', head_sha: 'content-sha',
 			head_repository: pr.head.repo, head_branch: 'article' } } };
 	const github = { rest: { pulls: { list: {} } },
 		paginate: async () => [pr, { ...pr, base: { ...pr.base, repo: { full_name: 'BUCTSNC/buct-wiki' } } }] };

@@ -1,4 +1,4 @@
-name: PR preview build
+name: CI
 
 on:
   merge_group:

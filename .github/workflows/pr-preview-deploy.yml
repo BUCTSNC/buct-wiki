@@ -6,7 +6,7 @@ on:
       CLOUDFLARE_API_TOKEN:
         required: true
   workflow_run:
-    workflows: [PR preview build]
+    workflows: [CI]
     types: [completed]
 
 permissions:
