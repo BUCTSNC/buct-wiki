@@ -1,0 +1,46 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      content-only:
+        description: Build the caller's content commit using the trusted template main.
+        type: boolean
+        default: false
+      artifact-name:
+        description: Upload the built site under this name; leave empty for build checks only.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: ${{ inputs.content-only && 'BUCTSNC/buct-wiki' || github.repository }}
+          ref: ${{ inputs.content-only && 'main' || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: package.json
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:preview
+      - run: pnpm run test:worker
+      - run: pnpm run build:cloudflare ${{ github.event_name == 'pull_request' && '--mode preview' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CONTENT_GIT_URL: ${{ inputs.content-only && format('{0}/{1}.git', github.server_url, github.repository) || '' }}
+          CONTENT_GIT_REF: ${{ inputs.content-only && github.sha || '' }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: inputs.artifact-name != ''
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 3
