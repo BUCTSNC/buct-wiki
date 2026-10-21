@@ -196,7 +196,10 @@ test('preview reporting transitions pending to success and updates the same comm
 	assert.equal(f.statuses[1].state, 'success');
 	assert.equal(f.statuses[1].environment_url, f.result.alias);
 	assert.equal(f.comments.length, 1);
-	assert.match(f.comments[0].body, /打开最近成功预览/);
+	assert.match(f.comments[0].body, /### ✅ 预览已就绪 — buct-wiki #12/);
+	assert.ok(f.comments[0].body.includes('/commit/abc123'));
+	assert.ok(f.comments[0].body.includes('/actions/runs/100'));
+	assert.ok(f.comments[0].body.includes(f.result.alias));
 	assert.ok(f.comments[0].body.includes(f.result.url));
 });
 
@@ -235,8 +238,8 @@ test('build failures, cancellations and upload failures replace stale success fe
 		await previewDeploy.finishPreview(f.github, f.context, { ...f.result, url: '' });
 		assert.equal(f.statuses.at(-1).state, 'failure');
 		assert.equal(f.statuses.at(-1).environment_url, undefined);
-		assert.match(f.comments[0].body, /发布失败|构建未成功/);
-		assert.doesNotMatch(f.comments[0].body, /打开最近成功预览/);
+		assert.match(f.comments[0].body, /发布失败|构建未成功|构建已取消/);
+		assert.doesNotMatch(f.comments[0].body, /workers\.dev/);
 		assert.ok(f.comments[0].body.includes(`/runs/${conclusion === 'success' ? 100 : 99}`));
 		assert.equal(f.comments.length, 1);
 	}
