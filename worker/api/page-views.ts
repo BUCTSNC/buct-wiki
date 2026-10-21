@@ -1,12 +1,10 @@
-interface Env {
-    DB: D1Database;
-}
+import type { Env } from '../env.ts';
 
 interface PageViewRequest {
     path?: unknown;
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function post(request: Request, env: Env): Promise<Response> {
 	try {
 		if (!env.DB) {
 			return Response.json({ error: 'D1 binding DB is missing' }, { status: 500 });
@@ -55,7 +53,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 			{ status: 500 }
 		);
 	}
-};
+}
 
 function normalizePath(value: unknown) {
     if (typeof value !== 'string') return null;
