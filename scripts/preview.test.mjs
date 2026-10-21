@@ -73,6 +73,27 @@ test('preview publishing rejects symbolic links and missing index pages before c
 	}
 });
 
+test('fork PR matching works when commit associations and workflow pull_requests are empty', async () => {
+	const pr = { number: 3, state: 'open',
+		head: { sha: 'build-sha', ref: 'fix/worker-dashboard-config', repo: { full_name: 'isning/buct-wiki' } },
+		base: { ref: 'main', repo: { full_name: 'BUCTSNC/buct-wiki' } } };
+	const context = { repo: { owner: 'BUCTSNC', repo: 'buct-wiki' },
+		payload: { workflow_run: { event: 'pull_request', conclusion: 'success',
+			path: '.github/workflows/pr-preview-build.yml', head_sha: pr.head.sha,
+			head_repository: pr.head.repo, head_branch: pr.head.ref, pull_requests: [] } } };
+	const github = {
+		rest: { repos: { listPullRequestsAssociatedWithCommit: 'commit-pulls' }, pulls: { list: 'pulls' } },
+		paginate: async (method, args) => {
+			if (method === 'commit-pulls') return [];
+			assert.equal(method, 'pulls');
+			assert.deepEqual(args, { ...context.repo, state: 'open', base: 'main',
+				head: 'isning:fix/worker-dashboard-config' });
+			return [pr];
+		},
+	};
+	assert.equal(await previewDeploy.findPullRequest(github, context), pr);
+});
+
 test('deployments only target an open PR at the exact build commit in this repository', async () => {
 	const context = {
 		repo: { owner: 'BUCTSNC', repo: 'buct-wiki' },
@@ -87,9 +108,9 @@ test('deployments only target an open PR at the exact build commit in this repos
 	},
 		base: { ref: 'main', repo: { full_name: 'BUCTSNC/buct-wiki' } } };
 	let pulls = [pr];
-	const github = { rest: { repos: { listPullRequestsAssociatedWithCommit: {} } },
+	const github = { rest: { pulls: { list: {} } },
 		paginate: async (_method, args) => {
-			assert.equal(args.commit_sha, 'abc123');
+			assert.deepEqual(args, { ...context.repo, state: 'open', base: 'main', head: 'contributor:feature' });
 			return pulls;
 		} };
 	assert.equal(await previewDeploy.findPullRequest(github, context), pr);
@@ -123,7 +144,7 @@ test('content PR matching uses the content repository, not a same-number templat
 		payload: { workflow_run: { event: 'pull_request', conclusion: 'success',
 			path: '.github/workflows/pr-preview-build.yml', head_sha: 'content-sha',
 			head_repository: pr.head.repo, head_branch: 'article' } } };
-	const github = { rest: { repos: { listPullRequestsAssociatedWithCommit: {} } },
+	const github = { rest: { pulls: { list: {} } },
 		paginate: async () => [pr, { ...pr, base: { ...pr.base, repo: { full_name: 'BUCTSNC/buct-wiki' } } }] };
 	assert.equal(await previewDeploy.findPullRequest(github, context), pr);
 });
