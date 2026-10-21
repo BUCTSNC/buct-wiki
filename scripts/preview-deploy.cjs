@@ -92,7 +92,9 @@ function preparePreviewAssets(source, destination) {
 }
 
 function previewUrls(output) {
-	const result = JSON.parse(output);
+	const result = output.trim().split('\n').filter(line => line.trim()).map(line => JSON.parse(line))
+		.findLast(entry => entry.type === 'preview' && entry.version === 1);
+	if (!result) throw new Error('Wrangler did not return a preview deployment record');
 	function workersUrl(urls) {
 		const url = urls?.find(value => {
 			try {
@@ -103,7 +105,7 @@ function previewUrls(output) {
 		if (!url) throw new Error('Wrangler did not return a workers.dev preview URL');
 		return url;
 	}
-	return { url: workersUrl(result.deployment?.urls), alias: workersUrl(result.preview?.urls) };
+	return { url: workersUrl(result.deployment_urls), alias: workersUrl(result.preview_urls) };
 }
 
 module.exports = { previewPrefix, findPullRequest, startPreview, finishPreview, preparePreviewAssets, previewUrls };
