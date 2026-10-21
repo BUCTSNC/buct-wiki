@@ -55,13 +55,20 @@ async function finishPreview(github, context, { deploymentId, number, sha, url, 
 	const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: number });
 	if (pr.state !== 'open' || pr.head.sha !== sha) return;
 	const marker = '<!-- cloudflare-pr-preview -->';
-	const result = state === 'success'
-		? `[打开最近成功预览](${previewUrl}) / [查看此次部署](${url})`
-		: `本次预览${buildSucceeded ? '发布失败' : '构建未成功'}。[查看运行日志](${logUrl})`;
+	const result = state === 'success' ? '✅ 预览已就绪'
+		: buildSucceeded ? '❌ 预览发布失败'
+			: context.payload.workflow_run.conclusion === 'cancelled' ? '⏹️ 预览构建已取消' : '❌ 预览构建未成功';
+	const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`;
 	const body = [
-		marker, '### Cloudflare Workers 预览', '', result, '', `提交：\`${sha}\``, '',
-		'每个 PR 的预览相互独立；后续提交会更新此评论。',
-		'预览不会提交反馈或连接正式数据库。',
+		marker, `### ${result} — ${context.repo.repo} #${number}`, '',
+		'| 项目 | 链接 |', '| :--- | :--- |',
+		`| 🔨 最新提交 | [\`${sha.slice(0, 7)}\`](${commitUrl}) |`,
+		`| 📋 ${buildSucceeded ? '部署' : '构建'}日志 | [查看 GitHub Actions 日志](${logUrl}) |`,
+		...(state === 'success' ? [
+			`| 🔍 PR 预览 | [${previewUrl}](${previewUrl}) |`,
+			`| 📌 本次部署 | [${url}](${url}) |`,
+			'', '*PR 预览链接随成功部署更新；本次部署链接对应此提交。*',
+		] : []),
 	].join('\n');
 	const comments = await github.paginate(github.rest.issues.listComments, {
 		...context.repo, issue_number: number,
