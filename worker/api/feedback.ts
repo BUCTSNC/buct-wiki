@@ -1,6 +1,4 @@
-interface Env {
-	DB: D1Database;
-}
+import type { Env } from '../env.ts';
 
 interface FeedbackRequest {
 	path?: unknown;
@@ -19,7 +17,7 @@ const FEEDBACK_TYPES = new Set([
 	'other',
 ]);
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export async function post(request: Request, env: Env): Promise<Response> {
 	if (!env.DB) {
 		return Response.json({ error: 'D1 binding DB is missing' }, { status: 500 });
 	}
@@ -66,7 +64,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 	} catch {
 		return Response.json({ error: 'Failed to save feedback' }, { status: 500 });
 	}
-};
+}
 
 function normalizePath(value: unknown) {
 	if (typeof value !== 'string') return null;

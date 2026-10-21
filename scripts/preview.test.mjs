@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import previewDeploy from './preview-deploy.cjs';
-import toml from '@iarna/toml';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -39,37 +38,37 @@ function sourceRepository() {
 	return directory;
 }
 
-test('preview publishing copies static files and only the trusted configuration', () => {
-	const source = mkdtempSync(join(fixtures, 'assets-'));
-	const destination = join(mkdtempSync(join(fixtures, 'publish-')), 'upload');
-	writeFileSync(join(source, 'index.html'), '<h1>Preview</h1>');
-	writeFileSync(join(source, 'wrangler.toml'), 'name = "untrusted"\n');
-	writeFileSync(join(source, '_headers'), '/assets/*\n  Cache-Control: public\n');
-	mkdirSync(join(source, 'assets/nested'), { recursive: true });
-	writeFileSync(join(source, 'assets/nested/icon.svg'), '<svg/>');
-	previewDeploy.prepareStaticPreview(source, destination, join(root, 'wrangler.toml'));
-	assert.equal(readFileSync(join(destination, 'dist/index.html'), 'utf8'), '<h1>Preview</h1>');
-	assert.equal(readFileSync(join(destination, 'dist/assets/nested/icon.svg'), 'utf8'), '<svg/>');
-	assert.equal(readFileSync(join(destination, 'wrangler.toml'), 'utf8'),
-		readFileSync(join(root, 'wrangler.toml'), 'utf8'));
-	const config = toml.parse(readFileSync(join(destination, 'wrangler.toml'), 'utf8'));
-	assert.equal(config.name, 'buct-wiki');
-	assert.equal(config.d1_databases[0].binding, 'DB');
-	assert.deepEqual(config.env.preview.d1_databases, []);
-	assert.match(readFileSync(join(destination, 'dist/_headers'), 'utf8'), /X-Robots-Tag: noindex, nofollow/);
-	assert.equal(existsSync(join(destination, 'functions')), false);
+test('preview assets cannot replace trusted Worker code or configuration', () => {
+ const source = mkdtempSync(join(fixtures, 'assets-'));
+ const checkout = mkdtempSync(join(fixtures, 'trusted-'));
+ const destination = join(checkout, 'dist');
+ const config = readFileSync(join(root, 'wrangler.jsonc'), 'utf8');
+ writeFileSync(join(checkout, 'wrangler.jsonc'), config);
+ mkdirSync(join(checkout, 'worker'));
+ writeFileSync(join(checkout, 'worker/index.ts'), 'trusted worker');
+ writeFileSync(join(source, 'index.html'), '<h1>Preview</h1>');
+ writeFileSync(join(source, 'wrangler.jsonc'), '{"main":"evil.js"}');
+ mkdirSync(join(source, 'worker'));
+ writeFileSync(join(source, 'worker/index.ts'), 'untrusted worker');
+ writeFileSync(join(source, '_worker.js'), 'untrusted Pages worker');
+ writeFileSync(join(source, '_headers'), '/assets/*\n  Cache-Control: public\n');
+ previewDeploy.preparePreviewAssets(source, destination);
+ assert.equal(readFileSync(join(destination, 'index.html'), 'utf8'), '<h1>Preview</h1>');
+ assert.equal(readFileSync(join(checkout, 'wrangler.jsonc'), 'utf8'), config);
+ assert.equal(readFileSync(join(checkout, 'worker/index.ts'), 'utf8'), 'trusted worker');
+ assert.equal(readFileSync(join(destination, '_headers'), 'utf8'), '/assets/*\n  Cache-Control: public\n');
+ assert.equal(readFileSync(join(destination, '_worker.js'), 'utf8'), 'untrusted Pages worker');
+ assert.equal(existsSync(join(checkout, 'pnpm-workspace.yaml')), false);
 });
 
-test('preview publishing rejects executable workers and symbolic links before copying', () => {
-	for (const type of ['worker-file', 'worker-directory', 'symlink']) {
+test('preview publishing rejects symbolic links and missing index pages before copying', () => {
+	for (const type of ['symlink', 'missing-index']) {
 		const source = mkdtempSync(join(fixtures, 'unsafe-assets-'));
 		const destination = join(mkdtempSync(join(fixtures, 'rejected-')), 'upload');
-		writeFileSync(join(source, 'index.html'), '<h1>Preview</h1>');
-		if (type === 'worker-file') writeFileSync(join(source, '_worker.js'), 'export default {}');
-		if (type === 'worker-directory') mkdirSync(join(source, '_worker.js'));
+		if (type !== 'missing-index') writeFileSync(join(source, 'index.html'), '<h1>Preview</h1>');
 		if (type === 'symlink') symlinkSync(join(root, 'package.json'), join(source, 'linked.json'));
-		assert.throws(() => previewDeploy.prepareStaticPreview(source, destination, join(root, 'wrangler.toml')),
-			/Unsupported preview asset|Executable Pages workers/);
+		assert.throws(() => previewDeploy.preparePreviewAssets(source, destination),
+			/Unsupported preview asset|ENOENT/);
 		assert.equal(existsSync(destination), false);
 	}
 });
@@ -162,7 +161,7 @@ function reportingFixture() {
 		},
 	};
 	const result = { deploymentId: 42, number: 12, sha: 'abc123',
-		url: 'https://hash.preview.pages.dev', alias: 'https://pr-12.preview.pages.dev' };
+		url: 'https://hash-buct-wiki.example.workers.dev', alias: 'https://pr-12-buct-wiki.example.workers.dev' };
 	return { github, context, core, outputs, pr, statuses, comments, result };
 }
 
@@ -303,4 +302,15 @@ test('content fetching accepts an exact PR commit and preserves its history', ()
 	assert.equal(git(destination, 'rev-parse', 'HEAD'), selected);
 	assert.equal(readFileSync(join(destination, 'article.md'), 'utf8'), '# Original\n');
 	assert.equal(git(destination, 'log', '-1', '--format=%s'), 'Add article');
+});
+
+test('Wrangler native Preview JSON provides both stable and immutable workers.dev URLs', () => {
+ const url = 'https://deployment-buct-wiki.example.workers.dev';
+ const alias = 'https://pr-12-buct-wiki.example.workers.dev';
+ assert.deepEqual(previewDeploy.previewUrls(JSON.stringify({
+  preview: { urls: ['https://custom.example', alias] }, deployment: { urls: [url] },
+ })), { url, alias });
+ for (const output of ['invalid', '{}', '{"preview":{"urls":["https://evil.example"]}}']) {
+  assert.throws(() => previewDeploy.previewUrls(output));
+ }
 });

@@ -1,70 +1,95 @@
 # CI：发布与 PR 预览
 
-正式站和 PR 预览均由 **GitHub Actions 构建、Wrangler 推送到 Cloudflare Pages**。Cloudflare 不再拉取代码或执行构建。
+正式站与两个仓库的 PR 预览均由 **GitHub Actions 构建、Wrangler 推送到 Cloudflare Workers**，共用已有 Worker `buct-wiki`。Cloudflare 不拉取代码或执行构建。
 
 | 配置 | 用途 |
 | --- | --- |
-| `wrangler.toml` | 共用项目、输出目录、兼容日期和环境绑定；`env.preview` 清空 D1 绑定 |
-| `.github/workflows/pages-release.yml` | 模板 `main` 更新、内容更新通知或手动运行时正式发布 |
-| `.github/workflows/pr-preview-build.yml` | 构建 PR，包括外部 fork |
-| `.github/workflows/content-preview-build.yml` | 供内容仓库调用，使用可信模板和内容 PR 的确切提交构建 |
-| `.github/workflows/pr-preview-deploy.yml` | 校验、发布静态产物，更新 PR 评论和 GitHub Deployment |
-| `.github/workflows/pr-preview-cleanup.yml` | 每日检查保留策略，清理符合条件的旧预览 |
+| `wrangler.jsonc` | Worker 入口、静态资源、D1、日志和追踪配置 |
+| `worker/index.ts` | 反馈与阅读量 API 路由 |
+| `.github/workflows/workers-release.yml` | 模板 `main`、内容更新通知、手动触发正式发布 |
+| `.github/workflows/pr-preview-build.yml` | 构建模板 PR，包括外部 fork |
+| `.github/workflows/content-preview-build.yml` | 使用可信模板与内容 PR 的确切提交构建 |
+| `.github/workflows/pr-preview-deploy.yml` | 校验静态产物、发布原生 Worker Preview、更新 PR 评论与 GitHub Deployment |
 
-Wrangler 配置是受支持的 Pages 运行时配置的唯一来源；项目创建、生产分支、域名与 Git 自动部署开关不属于这些文件管理的范围。后续修改绑定、兼容日期和普通运行时变量，请提交仓库配置。凭据只放 GitHub Secrets，勿写入配置文件。
+## 从 Pages 切换
 
-## 首次接入与切换
+1. 确认现有 Worker 名称为 `buct-wiki`，核对其域名和绑定。正式 D1 为 `afa6757e-4b3b-4acb-9bf1-f8820daab528`，绑定名为 `DB`。域名由控制台管理，本次配置不声明新域名或路由；切换前需将线上其他变量和绑定同步到仓库，避免部署时遗漏。
+2. 模板仓库设置 Secret `CLOUDFLARE_API_TOKEN`：限定到 `buct-wiki` 的 **Individual Workers → Editor** 权限，不授予账户级 D1 权限。设置 Variable `CLOUDFLARE_ACCOUNT_ID`。
+3. 内容仓库也设置上述账户 ID 与自己的 API Token，Token 同样限定到 `buct-wiki` 的 **Individual Workers → Editor**，不需要 D1 权限。共享工作流在调用仓库的上下文执行，因此需要调用方提供凭据。
+4. 关闭旧 Pages 与新 Worker 上重复的 Git 自动构建。域名迁移、旧 Pages 部署和项目的删除不由工作流执行，旧预览链接不会自动变成 Workers 链接。
+5. 先合入模板工作流，再合入内容仓库的入口。检查 `Workers release`，然后分别更新模板与内容 PR 验证预览。`workflow_run` 发布入口必须已存在于默认分支，首次外部贡献者的 Actions 可能需要维护者批准。
 
-1. 正式站复用 `wrangler.toml` 中的 `buct-wiki` 项目。切换前，在临时目录使用 `pnpm dlx wrangler@4.151.3 pages download config buct-wiki` 获取线上配置，与仓库配置核对并补齐，避免遗漏原有绑定或变量。不要在仓库根目录直接下载并覆盖现有文件。
-2. 确认现有项目的生产分支为 `main`。正式部署使用 `--branch main`；模板与内容预览分别使用 `--branch pr-编号` 和 `--branch content-pr-编号`。所有部署复用 `buct-wiki`，无需创建新项目或配置新域名。
-3. 在组织仓库 `BUCT-WIKI/buct-wiki` 的 Settings → Secrets and variables → Actions 中设置：
-   - Secret `CLOUDFLARE_API_TOKEN`：仅授予目标账户的 **Account → Cloudflare Pages → Edit** 权限。
-   - Variable `CLOUDFLARE_ACCOUNT_ID`：该 Cloudflare 账户的 ID。
-4. 关闭现有正式项目的 Git 自动生产部署和预览分支部署，再合入工作流。已有 Git 集成项目可以继续由 Wrangler 上传，无需删除项目或迁移域名。关闭 CF 拉取开关需要一次控制台或 API 操作，不能通过 Wrangler 配置文件声明。
-5. 合入默认分支后，检查 `Pages release`，再新建或更新 PR 验证预览。`workflow_run` 发布工作流必须先存在于默认分支；首次外部贡献者的 Actions 可能需要维护者批准。
+凭据只放 GitHub Secrets，不需要 CI `.env`。内容更新通知使用组织拥有的 GitHub App，配置见下文。旧 `TEMPLATE_DISPATCH_TOKEN` 和 `CLOUDFLARE_DEPLOY_HOOK` 不再使用。
 
-## 预览体验
+Node 和 pnpm 版本分别由 `package.json` 的 `engines.node` 和 `packageManager` 声明，工作流直接读取，不单独维护版本号。
 
-模板 PR 使用 `pr-编号` 分支别名，例如 `pr-12.buct-wiki.pages.dev`；内容 PR 使用 `content-pr-编号`，例如 `content-pr-12.buct-wiki.pages.dev`。两个仓库的同号 PR 不互相覆盖。同一个 PR 的后续提交更新固定地址，每次部署还有独立的 `<部署哈希>.buct-wiki.pages.dev` 地址，便于对照旧版本。
+Wrangler 版本只在 `package.json` 的开发依赖中声明，并由 `pnpm-lock.yaml` 锁定。本地和 CI 均通过 `pnpm exec wrangler` 使用该版本，工作流不再额外安装 Wrangler。正式发布和预览共用 `wrangler.jsonc`，由 Wrangler 原生解析，脚本不读取或生成部署配置。
 
-机器人更新同一条 PR 评论，成功时展示最近成功预览、此次部署和提交编号；构建或发布失败时显示失败提示及对应运行日志。GitHub Deployment 在开始发布时标记为 pending，结束后记录 success 或 failure。过期提交不会覆盖当前 PR 的评论。评论中的网址取自 Wrangler 实际输出；这里的域名仅为示例。
+## 正式站与静态资源
 
-构建在无部署凭据的 runner 中运行；发布在独立 runner 上使用默认分支的代码，不执行 PR 内的脚本。发布校验拒绝符号链接和 `_worker.js`，只上传静态文件，不携带正式站的 Functions 或 D1 绑定。已关闭或提交已变化的 PR 会跳过发布。
+Astro 仍输出静态站点到 `dist/`。匹配的 HTML、CSS、JS 和图片由 Workers Static Assets 直接提供；`"run_worker_first": ["/api/*"]` 只让 API 优先执行 Worker，不将所有文章访问送进服务端代码。缺失页面使用构建产物中的 `404.html`。
 
-生产与预览共用可信的 `wrangler.toml`。顶层保留本地与生产环境的 D1 绑定，`[env.preview]` 通过 `d1_databases = []` 显式清空预览绑定；预览环境配置适用于所有预览分支。
+`POST /api/feedback` 与 `POST /api/page-views` 保留原有请求格式和 D1 SQL。已知 API 的其他 HTTP 方法返回 405，未知 API 返回 404。D1 绑定只赋予 Worker 访问数据库的能力；这两个公开接口仍不要求用户登录。
 
-## 预览保留策略
+正式发布流程为「构建 → `wrangler deploy`」，不执行数据库建表或迁移。日志和追踪已在 `wrangler.jsonc` 启用，采样率为 1，包含 invocation logs。错误检测通过 `"issues": { "enabled": true }` 启用；这是 Wrangler 支持的字段名，非 `observability.issue_detection`。静态资源直接命中不会产生用户 Worker 的调用日志。
 
-`PR preview cleanup` 每日 UTC 03:17（北京时间 11:17）运行，策略定义在 `scripts/preview-cleanup.cjs`：
+## PR 预览
 
-- 进行中的 PR 保留最新 3 个成功版本，失败或取消的部署保留 7 天；构建中的部署不清理。
-- PR 关闭或合并满 7 天后，其预览进入清理范围。重新打开的 PR 按进行中的 PR 处理。
-- 只处理共用项目中 `environment=preview` 且能查到对应 PR 的部署。模板仓库只处理 `pr-编号`，内容仓库只处理 `content-pr-编号`；正式部署、其他分支与无法确认归属的记录均保留。删除前再次读取部署，确认环境和分支仍满足这些条件。
-- 活动别名指向的部署会保留，Cloudflare 拒绝删除的部署也会保留并报告，**不使用强制删除**。因此关闭的 PR 通常仍可能留下一份最新预览，不能将此策略理解为所有预览都会到期消失。
-- GitHub 构建 Artifact 保留 3 天，与 Cloudflare 部署的保留策略独立。
+使用项目锁定版本 Wrangler 的原生 `wrangler preview`（当前为 open beta）。每个 PR 是 `buct-wiki` 下的独立 Preview，不创建独立的 Worker 或 Pages 项目：
 
-手动运行工作流默认选择 `plan`，只列出清理清单；选择 `apply` 才执行清理。每天的定时运行执行清理。候选列表及实际结果写入 Actions Summary；执行前会重新核对 PR 和部署状态。失败后可以重跑，已删除的部署不重复处理。
+- 模板 PR：`pr-12-buct-wiki.<账户子域>.workers.dev`。
+- 内容 PR：`content-pr-12-buct-wiki.<账户子域>.workers.dev`。
+- 每次部署还有独立的 Deployment URL，可用于对照历史版本。
 
-正式构建读取独立内容仓库的最新 `main`。内容仓库发送 `content-updated` 通知后，由模板仓库的 `Pages release` 统一排队发布；也可手动运行。通知不接受任意构建地址或分支参数。
+机器人从 Wrangler 的 `--json` 结果读取实际网址，更新同一条评论。GitHub Deployment 记录 pending、success 或 failure；失败展示运行日志，过期提交不覆盖当前 PR 的评论。
 
-参考：[Pages Wrangler 配置](https://developers.cloudflare.com/pages/functions/wrangler-configuration/)、[CI Direct Upload](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)。
+构建在无 Cloudflare 凭据的 runner 中执行；发布使用默认分支的可信代码，不执行 PR 的构建脚本。产物校验拒绝符号链接和特殊文件，并确认首页存在。校验通过后，产物仅复制到可信 checkout 的 `dist/`。Wrangler 使用该 checkout 的锁定依赖、主配置及 Worker 入口执行 `pnpm exec wrangler preview`，外部 PR 的服务端代码不会被部署。
 
-预览从公开内容仓库获取文章，从 Git 历史生成贡献者与修改时间。反馈表单保留供审阅并明确提示不会提交，阅读量显示 `--`；预览不连接正式数据库。
-正式和预览构建均沿用原有贡献者脚本，通过工作流自带、仅有 `contents: read` 权限的 `GITHUB_TOKEN` 查询 GitHub 作者资料；构建步骤不接收 Cloudflare 部署凭据。
+主配置声明 `"previews": {}`，由原生 Preview 隔离生产设置，不继承正式 D1 绑定；命令使用 `--ignore-base-config` 忽略控制台的 Previews Base 设置。即使产物中含有 `wrangler.jsonc`、JavaScript 或同名 API 文件，也只会进入 `dist/`，不会覆盖主配置或可信 Worker 入口。预览包含可信 API 代码，但没有 D1 绑定，无法读写正式数据库。
 
-本地运行 `pnpm run build:cloudflare --mode preview` 可验证预览构建，需要通过环境变量提供 `GITHUB_TOKEN`。预览复用正式构建命令，通过 Astro 内置的 `import.meta.env.MODE === 'preview'` 关闭反馈与阅读量请求，保留生产构建行为，无需自定义预览环境变量。`pnpm run test:preview` 检查预览产物校验、贡献者元数据和内容更新；测试使用模拟 API，无需真实 Token。
+预览构建使用 `pnpm run build:cloudflare --mode preview`。Astro 内置的 `import.meta.env.MODE === 'preview'` 关闭反馈和阅读量请求，表单保留供审阅并提示不会提交，阅读量显示 `--`。生成贡献者元数据使用工作流自带、只读的 `GITHUB_TOKEN`，不需要自定义预览环境变量。`workers.dev` 预览由 Cloudflare 原生添加 `X-Robots-Tag: noindex`，发布脚本不修改构建产物中的 `_headers`。
 
-## 内容仓库接入
+## 预览保留
 
-`BUCT-WIKI/buct-wiki-content` 中的配套工作流负责触发，调用本仓库 `main` 上的共享工作流：
+预览完全使用 Cloudflare 的原生数量上限，不运行定时或手动清理任务，也不在 PR 关闭时主动删除：
 
-- `pr-preview-build.yml`：`pull_request` 触发，无部署凭据；使用模板 `main` 和事件对应的内容合并提交构建，不执行内容仓库中的工作流或构建脚本。
-- `pr-preview-deploy.yml`：`workflow_run` 触发，使用可信模板代码发布，评论及 Deployment 写回内容 PR。
-- `pr-preview-cleanup.yml`：每日 UTC 03:47 清理内容预览，策略与模板预览相同。
-- `trigger-pages-release.yml`：内容 `main` 更新后发送 `repository_dispatch`，替代旧的 Cloudflare Deploy Hook。
+- 免费套餐下，每个 Worker 最多 100 个 Preview；付费套餐为 500 个。两个仓库共享这个上限。达到上限后，Cloudflare 淘汰最久未部署的 Preview。
+- 每个 Preview 最多保留 100 次部署，超过后淘汰最旧部署。
+- 未达到上限时，已关闭 PR 的预览仍可能保留；被淘汰的预览及历史部署链接会失效。GitHub 构建 Artifact 单独保留 3 天。
 
-先合入模板仓库的共享工作流，再合入内容仓库的入口。内容仓库也需要 `CLOUDFLARE_API_TOKEN` Secret 和 `CLOUDFLARE_ACCOUNT_ID` Variable，可通过限定这两个仓库可用的组织级配置共享。构建入口不传递 Cloudflare Secret。
+## D1 运行时绑定
 
-在内容仓库另设 `TEMPLATE_DISPATCH_TOKEN` Secret：使用仅授权 `BUCT-WIKI/buct-wiki`、具有 **Contents: write** 权限的 fine-grained PAT（需符合组织授权策略）。内容仓库默认的 `GITHUB_TOKEN` 无权跨仓库发送通知。旧 `CLOUDFLARE_DEPLOY_HOOK` 不再使用。通知发送成功只表示已请求发布，实际构建结果应在模板仓库的 `Pages release` 中查看。
+网站通过 `DB` 绑定访问现有数据库，反馈与阅读量功能继续使用 D1。CI 不持有 D1 API 写权限，不管理数据库结构；需要调整表结构时由维护者单独执行。`d1/page_views.sql` 和 `d1/feedback.sql` 保留为建表参考及本地 API 测试使用，不会在发布时自动执行。
 
-共享工作流跟随受维护的模板 `main`；外部 PR 不能指定模板版本或发布配置。两份 fork PR 仅供审阅，正式发布和清理的仓库白名单不会在个人 fork 中运行。
+## 内容仓库与验证
+
+### GitHub App 配置
+
+1. 在 `BUCT-WIKI` 组织的 **Settings → Developer settings → GitHub Apps** 创建 App。Homepage URL 可以填写模板仓库网址；关闭 Webhook，不需要回调地址或额外服务器。安装范围选择仅当前账户。
+2. Repository permissions 仅授予 **Contents: Read and write**；Metadata 为默认只读，不需要 Actions、Workflows 或组织权限。
+3. 将 App 安装到 `BUCT-WIKI`，选择 **Only select repositories → buct-wiki**。App 只需访问接收通知的模板仓库。
+4. 在 App 设置中复制 **Client ID**，并通过 **Generate a private key** 下载 PEM 私钥。在内容仓库 `BUCT-WIKI/buct-wiki-content` 的 **Settings → Secrets and variables → Actions** 配置：
+
+   | 类型 | 名称 | 值 |
+   | --- | --- | --- |
+   | Variable | `HELPER_APP_CLIENT_ID` | App 的 Client ID |
+   | Secret | `HELPER_APP_PRIVATE_KEY` | PEM 文件完整内容，保留首尾标记和换行 |
+
+5. 两边工作流合入 `main` 后，在内容仓库手动运行 **Trigger release**，确认模板仓库出现 **Workers release** 运行。成功后可删除旧的 `TEMPLATE_DISPATCH_TOKEN` Secret。
+
+工作流使用固定提交版本的官方 [actions/create-github-app-token](https://github.com/actions/create-github-app-token)，只为模板仓库申请 `Contents: write` 的临时安装 Token，任务结束时自动撤销。私钥只存入 Secret，不提交到仓库。普通构建继续使用 Actions 自动提供的只读 `GITHUB_TOKEN`。
+
+### 触发与检查
+
+内容仓库的构建和发布两个预览工作流继续调用模板 `main` 上的共享工作流，无需复制 Workers 发布实现。内容仓库的 `Trigger release`（`.github/workflows/trigger-release.yml`）在 `main` 更新后发送 `content-updated` 通知，由模板的 `Workers release` 排队构建最新内容并发布；通知不接受任意构建地址或分支参数。通知工作流与部署平台无关，通知成功只表示已请求发布。
+
+```bash
+pnpm run test:preview
+pnpm run test:worker
+pnpm run build
+pnpm exec wrangler deploy --dry-run
+```
+
+API 测试使用内存 SQLite，预览测试使用模拟 API，不需要真实 Token。预览完整构建需提供只读 `GITHUB_TOKEN`。仅本地 dry-run 不等于验证过线上发布，首次接入仍需检查真实 Actions 与 PR 链接。
+
+参考：[Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[原生 Previews](https://developers.cloudflare.com/workers/previews/)、[预览配置](https://developers.cloudflare.com/workers/previews/configuration/)。

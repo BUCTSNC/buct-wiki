@@ -1,5 +1,13 @@
-const { readdirSync, lstatSync, cpSync, copyFileSync, readFileSync, writeFileSync } = require('node:fs');
+const { readdirSync, lstatSync, cpSync } = require('node:fs');
 const { join } = require('node:path');
+
+function previewPrefix(repository) {
+	switch (repository) {
+		case 'BUCT-WIKI/buct-wiki': return 'pr-';
+		case 'BUCT-WIKI/buct-wiki-content': return 'content-pr-';
+		default: throw new Error(`Unsupported preview repository: ${repository}`);
+	}
+}
 
 async function findPullRequest(github, context) {
 	const run = context.payload.workflow_run;
@@ -50,7 +58,7 @@ async function finishPreview(github, context, { deploymentId, number, sha, url, 
 		? `[打开最近成功预览](${previewUrl}) / [查看此次部署](${url})`
 		: `本次预览${buildSucceeded ? '发布失败' : '构建未成功'}。[查看运行日志](${logUrl})`;
 	const body = [
-		marker, '### Cloudflare Pages 预览', '', result, '', `提交：\`${sha}\``, '',
+		marker, '### Cloudflare Workers 预览', '', result, '', `提交：\`${sha}\``, '',
 		'每个 PR 的预览相互独立；后续提交会更新此评论。',
 		'预览不会提交反馈或连接正式数据库。',
 	].join('\n');
@@ -65,7 +73,7 @@ async function finishPreview(github, context, { deploymentId, number, sha, url, 
 	}
 }
 
-function prepareStaticPreview(source, destination, config) {
+function preparePreviewAssets(source, destination) {
 	// Validate the entire artifact before copying any file into the upload directory.
 	function validate(directory) {
 		for (const entry of readdirSync(directory)) {
@@ -74,29 +82,33 @@ function prepareStaticPreview(source, destination, config) {
 			if (stat.isSymbolicLink() || (!stat.isFile() && !stat.isDirectory())) {
 				throw new Error(`Unsupported preview asset: ${path}`);
 			}
-			if (entry.toLowerCase() === '_worker.js') {
-				throw new Error('Executable Pages workers are not allowed in previews');
-			}
 			if (stat.isDirectory()) validate(path);
 		}
 	}
 	validate(source);
 	if (!lstatSync(join(source, 'index.html')).isFile()) throw new Error('Missing preview index.html');
-	const output = join(destination, 'dist');
-	cpSync(source, output, { recursive: true });
-	// Wrangler runs outside the checkout: only trusted config and static assets are available.
-	// The PR branch selects env.preview from the shared config, which has no D1 binding.
-	copyFileSync(config, join(destination, 'wrangler.toml'));
-	let headers = '';
-	try { headers = readFileSync(join(output, '_headers'), 'utf8'); }
-	catch (error) { if (error.code !== 'ENOENT') throw error; }
-	writeFileSync(join(output, '_headers'), `${headers}\n/*\n  X-Robots-Tag: noindex, nofollow\n`);
+	cpSync(source, destination, { recursive: true });
 }
 
-module.exports = { findPullRequest, startPreview, finishPreview, prepareStaticPreview };
+function previewUrls(output) {
+	const result = JSON.parse(output);
+	function workersUrl(urls) {
+		const url = urls?.find(value => {
+			try {
+				const url = new URL(value);
+				return url.protocol === 'https:' && url.hostname.endsWith('.workers.dev');
+			} catch { return false; }
+		});
+		if (!url) throw new Error('Wrangler did not return a workers.dev preview URL');
+		return url;
+	}
+	return { url: workersUrl(result.deployment?.urls), alias: workersUrl(result.preview?.urls) };
+}
+
+module.exports = { previewPrefix, findPullRequest, startPreview, finishPreview, preparePreviewAssets, previewUrls };
 
 if (require.main === module) {
-	const [source, destination, config] = process.argv.slice(2);
-	if (!source || !destination || !config) throw new Error('Usage: preview-deploy.cjs source destination config');
-	prepareStaticPreview(source, destination, config);
+	const [source, destination] = process.argv.slice(2);
+	if (!source || !destination) throw new Error('Usage: preview-deploy.cjs source destination');
+	preparePreviewAssets(source, destination);
 }

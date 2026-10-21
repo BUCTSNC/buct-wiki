@@ -2,6 +2,7 @@
   "name": "buct-wiki",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "pnpm@12.3.4",
   "engines": {
     "node": "24.x"
   },
@@ -11,7 +12,8 @@
     "start": "astro dev",
     "build": "astro build",
     "build:cloudflare": "bash scripts/fetch-content.sh && node scripts/generate-contributors.mjs && astro build",
-    "test:preview": "node --test scripts/preview.test.mjs scripts/preview-cleanup.test.mjs",
+    "test:preview": "node --test scripts/preview.test.mjs",
+    "test:worker": "node --test scripts/worker.test.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -28,6 +30,7 @@
     "vue": "^3.5.35"
   },
   "devDependencies": {
-    "@iarna/toml": "2.2.5"
+    "@cloudflare/workers-types": "5.20261019.1",
+    "wrangler": "4.151.3"
   }
 }
