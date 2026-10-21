@@ -86,9 +86,9 @@ jobs:
         working-directory: trusted
         run: >-
           pnpm exec wrangler preview
-          --name "$PREVIEW_NAME" --tag "$PR_SHA" --ignore-base-config --json
-          > "$RUNNER_TEMP/preview-result.json"
+          --name "$PREVIEW_NAME" --tag "$PR_SHA" --ignore-base-config
         env:
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/preview-result.ndjson
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           PREVIEW_NAME: ${{ steps.pr.outputs.branch }}
@@ -108,7 +108,7 @@ jobs:
             if (process.env.DEPLOY_SUCCEEDED === 'true') {
               const { readFileSync } = require('node:fs');
               const { join } = require('node:path');
-              try { urls = previewUrls(readFileSync(join(process.env.RUNNER_TEMP, 'preview-result.json'), 'utf8')); }
+              try { urls = previewUrls(readFileSync(join(process.env.RUNNER_TEMP, 'preview-result.ndjson'), 'utf8')); }
               catch (error) { core.setFailed(error.message); }
             }
             await finishPreview(github, context, {

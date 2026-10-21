@@ -325,13 +325,19 @@ test('content fetching accepts an exact PR commit and preserves its history', ()
 	assert.equal(git(destination, 'log', '-1', '--format=%s'), 'Add article');
 });
 
-test('Wrangler native Preview JSON provides both stable and immutable workers.dev URLs', () => {
- const url = 'https://deployment-buct-wiki.example.workers.dev';
- const alias = 'https://pr-12-buct-wiki.example.workers.dev';
- assert.deepEqual(previewDeploy.previewUrls(JSON.stringify({
-  preview: { urls: ['https://custom.example', alias] }, deployment: { urls: [url] },
- })), { url, alias });
- for (const output of ['invalid', '{}', '{"preview":{"urls":["https://evil.example"]}}']) {
-  assert.throws(() => previewDeploy.previewUrls(output));
- }
+test('Wrangler structured output provides preview URLs alongside session records', () => {
+	const url = 'https://deployment-buct-wiki.example.workers.dev';
+	const alias = 'https://pr-12-buct-wiki.example.workers.dev';
+	const output = [
+		{ type: 'wrangler-session', version: 1, wrangler_version: '4.151.3' },
+		{ type: 'preview', version: 1, preview_urls: ['https://custom.example', alias], deployment_urls: [url] },
+	].map(entry => JSON.stringify(entry)).join('\n') + '\n';
+	assert.deepEqual(previewDeploy.previewUrls(output), { url, alias });
+	for (const invalid of ['', 'invalid', '{}',
+		JSON.stringify({ type: 'wrangler-session', version: 1 }),
+		JSON.stringify({ type: 'preview', version: 1, preview_urls: [alias] }),
+		JSON.stringify({ type: 'preview', version: 1, deployment_urls: [url], preview_urls: ['https://evil.example'] }),
+	]) {
+		assert.throws(() => previewDeploy.previewUrls(invalid));
+	}
 });
