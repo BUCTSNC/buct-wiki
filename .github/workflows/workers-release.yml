@@ -15,23 +15,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     if: github.repository == 'BUCTSNC/buct-wiki' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/build.yml
+    with:
+      artifact-name: production-build
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: package.json
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run test:worker
-      - run: pnpm run build:cloudflare
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - run: pnpm install --dev --frozen-lockfile
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: production-build
+          path: dist/
       - name: Deploy Worker
         run: pnpm exec wrangler deploy
         env:
