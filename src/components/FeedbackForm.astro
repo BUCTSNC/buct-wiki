@@ -1,59 +1,71 @@
 ---
+import Button from './ui/Button.astro';
+import Select from './ui/Select.astro';
+import Textarea from './ui/Textarea.astro';
+
 interface Props {
 	standalone?: boolean;
+	embedded?: boolean;
 }
 
-const { standalone = false } = Astro.props;
+const { standalone = false, embedded = false } = Astro.props;
 const isPreview = import.meta.env.MODE === 'preview';
 ---
 
 <section
+	class:list={['feedback', 'not-content', { embedded, standalone }]}
 	aria-labelledby={standalone ? '_top' : 'feedback-title'}
-	style="margin-top: 3rem; padding: 1.25rem; border: 1px solid var(--sl-color-hairline); border-radius: 0.5rem;"
 >
-	{!standalone && <h2 id="feedback-title" style="margin: 0; font-size: var(--sl-text-xl);">内容反馈</h2>}
-	{standalone && <p id="feedback-page" hidden style="margin: 0 0 1.25rem; color: var(--sl-color-gray-2);"></p>}
-	{isPreview && <p style="margin: 0 0 1.25rem; color: var(--sl-color-gray-2);">预览环境不会提交反馈。</p>}
+	{!standalone && !embedded && <h2 id="feedback-title">内容反馈</h2>}
+	{standalone && <p id="feedback-page" class="feedback-source" hidden></p>}
+	{isPreview && <p class="feedback-source">预览环境不会提交反馈。</p>}
 
-	<form id="feedback-form" style="display: grid; gap: 0.5rem;">
-		<label for="feedback-type">反馈类型</label>
-		<select
-			id="feedback-type"
-			name="type"
-			required
-			style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.75rem; border: 1px solid var(--sl-color-gray-5); border-radius: 0.35rem; background: var(--sl-color-bg); color: var(--sl-color-white); font: inherit;"
-		>
-			<option value="factual_error">事实错误</option>
-			<option value="outdated">内容过时</option>
-			<option value="missing_content">缺少内容</option>
-			<option value="unclear">表述不清</option>
-			<option value="typo">错别字或格式问题</option>
-			<option value="broken_link">链接失效</option>
-			<option value="suggestion">改进建议</option>
-			<option value="other">其他</option>
-		</select>
+	<form id="feedback-form">
+		<p class="feedback-contact">署名、授权等事项，请邮件联系 <a href="mailto:wiki@snc.moe">wiki@snc.moe</a>。</p>
+		<fieldset class="feedback-fields">
+			<div class="feedback-field feedback-type-field">
+				<label for="feedback-type">反馈类型</label>
+				<Select id="feedback-type" name="type" required aria-describedby="feedback-type-error">
+					<option value="" disabled selected>请选择反馈类型</option>
+					<option value="factual_error">事实错误</option>
+					<option value="outdated">内容过时</option>
+					<option value="missing_content">缺少内容</option>
+					<option value="unclear">表述不清</option>
+					<option value="typo">错别字或格式问题</option>
+					<option value="broken_link">链接失效</option>
+					<option value="suggestion">改进建议</option>
+					<option value="other">其他</option>
+				</Select>
+				<p class="feedback-error" id="feedback-type-error" hidden></p>
+			</div>
 
-		<label for="feedback-content" style="margin-top: 0.75rem;">详细说明</label>
-		<textarea
-			id="feedback-content"
-			name="content"
-			rows="5"
-			minlength="10"
-			maxlength="2000"
-			placeholder="请描述具体问题，至少 10 个字符"
-			required
-			style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.75rem; border: 1px solid var(--sl-color-gray-5); border-radius: 0.35rem; background: var(--sl-color-bg); color: var(--sl-color-white); font: inherit; resize: vertical;"
-		></textarea>
+			<div class="feedback-field">
+				<div class="feedback-field-heading">
+					<label for="feedback-content">详细说明</label>
+					<span class="feedback-count" aria-hidden="true"><span id="feedback-count">0</span> / 2,000</span>
+				</div>
+				<Textarea
+					id="feedback-content"
+					name="content"
+					rows={5}
+					minlength={10}
+					maxlength={2000}
+					placeholder="请描述具体问题"
+					aria-describedby="feedback-content-hint feedback-content-error"
+					required
+				/>
+				<p class="feedback-hint" id="feedback-content-hint">请填写 10–2,000 字，可附相关来源链接。</p>
+				<p class="feedback-error" id="feedback-content-error" hidden></p>
+			</div>
+		</fieldset>
 
-		<div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap;">
-			<button
-				type="submit"
-				style="padding: 0.55rem 1rem; border: 0; border-radius: 0.35rem; background: var(--sl-color-text-accent); color: var(--sl-color-black); font: inherit; font-weight: 600; cursor: pointer;"
-			>
-				提交反馈
-			</button>
-			<span id="feedback-status" role="status" aria-live="polite"></span>
+		<div class="feedback-actions">
+			<Button type="submit" class="feedback-submit">
+				<span class="feedback-spinner" aria-hidden="true" hidden></span>
+				<span data-submit-label>提交反馈</span>
+			</Button>
 		</div>
+		<p id="feedback-status" class="feedback-status" role="status" aria-live="polite" aria-atomic="true"></p>
 	</form>
 </section>
 
@@ -63,6 +75,12 @@ const isPreview = import.meta.env.MODE === 'preview';
 	const form = document.querySelector<HTMLFormElement>('#feedback-form');
 	const status = document.querySelector<HTMLElement>('#feedback-status');
 	const submitButton = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+	const submitLabel = submitButton?.querySelector<HTMLElement>('[data-submit-label]');
+	const spinner = submitButton?.querySelector<HTMLElement>('.feedback-spinner');
+	const fields = form?.querySelector<HTMLFieldSetElement>('fieldset');
+	const type = form?.querySelector<HTMLSelectElement>('#feedback-type');
+	const content = form?.querySelector<HTMLTextAreaElement>('#feedback-content');
+	const count = document.querySelector<HTMLElement>('#feedback-count');
 	const feedbackPage = document.querySelector<HTMLParagraphElement>('#feedback-page');
 	let feedbackPath = window.location.pathname;
 
@@ -86,41 +104,122 @@ const isPreview = import.meta.env.MODE === 'preview';
 		feedbackPage.hidden = false;
 	}
 
+	function updateContent() {
+		if (!content) return;
+		if (count) count.textContent = content.value.length.toLocaleString('en-US');
+		content.setCustomValidity(content.value.trim().length < 10 ? '请填写至少 10 字的详细说明。' : '');
+	}
+
+	function showFieldError(field: HTMLSelectElement | HTMLTextAreaElement) {
+		const error = document.getElementById(`${field.id}-error`);
+		if (!error) return;
+		const valid = field.validity.valid;
+		error.hidden = valid;
+		error.textContent = valid ? '' : field === type ? '请选择反馈类型。' : field.validationMessage;
+		if (valid) field.removeAttribute('aria-invalid');
+		else field.setAttribute('aria-invalid', 'true');
+	}
+
+	// Keep native constraints, with persistent field errors instead of browser popovers.
+	if (form) form.noValidate = true;
+	[type, content].forEach((field) => {
+		field?.addEventListener('invalid', (event) => {
+			event.preventDefault();
+			showFieldError(field);
+		});
+	});
+	content?.addEventListener('input', () => {
+		updateContent();
+		if (content.hasAttribute('aria-invalid')) showFieldError(content);
+		if (status && status.dataset.state !== 'loading') status.textContent = '';
+	});
+	type?.addEventListener('change', () => {
+		showFieldError(type);
+		if (status && status.dataset.state !== 'loading') status.textContent = '';
+	});
+	updateContent();
+
 	form?.addEventListener('submit', async (event) => {
 		event.preventDefault();
 
-		if (!form.reportValidity() || !status || !submitButton) return;
+		if (!status || !submitButton || submitButton.disabled) return;
+		updateContent();
+		if (!form.reportValidity()) {
+			form.querySelector<HTMLElement>(':invalid:not(fieldset)')?.focus();
+			return;
+		}
 
 		const formData = new FormData(form);
 		submitButton.disabled = true;
-		status.dataset.state = '';
-		status.style.color = '';
+		if (fields) fields.disabled = true;
+		form.setAttribute('aria-busy', 'true');
+		if (submitLabel) submitLabel.textContent = '正在提交…';
+		if (spinner) spinner.hidden = false;
+		status.dataset.state = 'loading';
 		status.textContent = '正在提交…';
 
 		try {
 			const data = await requestD1Function<{ success: boolean }>('/api/feedback', {
 				path: feedbackPath,
 				type: formData.get('type'),
-				content: formData.get('content'),
+				content: String(formData.get('content') ?? '').trim(),
 			});
 
 			if (data === null) {
+				status.dataset.state = 'info';
 				status.textContent = import.meta.env.MODE === 'preview'
 					? '预览环境不会提交反馈。'
-					: '开发环境未提交反馈。';
+					: '当前为本地预览，反馈尚未发送。';
 				return;
 			}
+			if (!data.success) throw new Error('Feedback was not accepted');
 
 			form.reset();
+			updateContent();
 			status.dataset.state = 'success';
-			status.style.color = 'var(--sl-color-green-high)';
-			status.textContent = '感谢反馈，我们已收到。';
+			status.textContent = '反馈已提交，我们将核查相关内容。';
 		} catch {
 			status.dataset.state = 'error';
-			status.style.color = 'var(--sl-color-red-high)';
-			status.textContent = '提交失败，请稍后重试。';
+			status.textContent = '提交失败，所填内容已保留。请稍后重试，或通过上述邮箱联系本站。';
 		} finally {
 			submitButton.disabled = false;
+			if (fields) fields.disabled = false;
+			form.removeAttribute('aria-busy');
+			if (submitLabel) submitLabel.textContent = '提交反馈';
+			if (spinner) spinner.hidden = true;
 		}
 	});
 </script>
+
+<style>
+	.feedback { color: var(--md-sys-color-on-surface); font-size: 0.875rem; line-height: 1.75; }
+	.feedback:not(.embedded) { margin-top: 2rem; max-width: 40rem; }
+	.feedback h2 { margin: 0 0 1.5rem; font-size: 1rem; font-weight: 600; }
+	.feedback form { display: grid; gap: 1.5rem; }
+	.feedback-fields { display: grid; gap: 1.5rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+	.feedback-field { display: grid; gap: 0.5rem; min-width: 0; }
+	.feedback-type-field { width: 100%; max-width: 20rem; }
+	.feedback-field-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+	label { color: var(--md-sys-color-on-surface); font-weight: 600; }
+	.feedback-count { color: var(--md-sys-color-on-surface-variant); font-size: 0.8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.feedback-hint, .feedback-contact, .feedback-source { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: 0.8125rem; }
+	.feedback-source { margin-bottom: 1.5rem; overflow-wrap: anywhere; }
+	.feedback-error { margin: 0; color: var(--md-sys-color-error); font-size: 0.875rem; }
+	.feedback-actions { display: flex; align-items: center; justify-content: flex-end; gap: 1.5rem; }
+	.feedback-contact a { color: var(--md-sys-color-primary); text-underline-offset: 0.2em; }
+	.feedback-contact a:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+	.feedback-status { margin: 0; padding: 0.75rem 1rem; border-radius: var(--md-sys-shape-sm); background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); }
+	.feedback-status:empty { display: none; }
+	.feedback-status[data-state='loading'] { background: none; padding: 0; }
+	.feedback-status[data-state='success'] { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+	.feedback-status[data-state='error'] { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+	.feedback-spinner { width: 1rem; height: 1rem; box-sizing: border-box; border: 2px solid currentColor; border-inline-start-color: transparent; border-radius: 50%; animation: feedback-spin 0.8s linear infinite; }
+	.feedback-spinner[hidden] { display: none; }
+	@keyframes feedback-spin { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { .feedback-spinner { animation: none; } }
+	@media (max-width: 35rem) {
+		.feedback-type-field { max-width: none; }
+		.feedback-actions { flex-direction: column; align-items: stretch; gap: 1rem; }
+		.feedback-actions :global(.feedback-submit) { width: 100%; }
+	}
+</style>

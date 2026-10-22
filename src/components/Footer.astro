@@ -1,9 +1,99 @@
 ---
-import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
+import { Icon } from '@astrojs/starlight/components';
+import LastUpdated from 'virtual:starlight/components/LastUpdated';
+import Pagination from 'virtual:starlight/components/Pagination';
+import config from 'virtual:starlight/user-config';
 import FeedbackForm from './FeedbackForm.astro';
+import ContentNotice from './ContentNotice.astro';
+import PageEditLink from './PageEditLink.astro';
 
-const { feedback } = Astro.locals.starlightRoute.entry.data;
+const { entry, editUrl } = Astro.locals.starlightRoute;
+const { feedback } = entry.data;
+const isFeedbackPage = Astro.url.pathname.replace(/\/$/, '') === '/feedback';
 ---
 
-{feedback && <FeedbackForm />}
-<DefaultFooter />
+<!-- Keep reading guidance, contribution actions, and licensing in distinct groups. -->
+<footer class="article-footer" data-pagefind-ignore>
+	{entry.id !== '404' && (
+		<>
+			{!isFeedbackPage && <ContentNotice kind="reading" />}
+			{!isFeedbackPage && (editUrl || feedback) && (
+				<section class="contribution" aria-label="页面编辑与反馈">
+					<div class="contribution-actions">
+						<PageEditLink variant="footer" />
+						{feedback && (
+							<button class="feedback-toggle" type="button" id="feedback-title" aria-expanded="false" aria-controls="article-feedback">
+								<Icon name="comment" size="1rem" /><span>反馈内容问题</span><Icon name="down-caret" size="0.875rem" />
+							</button>
+						)}
+					</div>
+					{feedback && (
+						<div id="article-feedback" class="feedback-body" hidden><FeedbackForm embedded /></div>
+					)}
+				</section>
+			)}
+			<ContentNotice kind="license" />
+		</>
+	)}
+	<div class="last-updated"><LastUpdated /></div>
+	<div class="article-pagination"><Pagination /></div>
+	{config.credits && (
+		<a class="kudos" href="https://starlight.astro.build">
+			<Icon name="starlight" /> {Astro.locals.t('builtWithStarlight.label')}
+		</a>
+	)}
+</footer>
+
+<script>
+	const feedbackToggle = document.querySelector<HTMLButtonElement>('.feedback-toggle');
+	const feedbackBody = document.querySelector<HTMLElement>('#article-feedback');
+	function setFeedbackOpen(open: boolean) {
+		if (!feedbackToggle || !feedbackBody) return;
+		feedbackBody.hidden = !open;
+		feedbackToggle.setAttribute('aria-expanded', String(open));
+	}
+	feedbackToggle?.addEventListener('click', () => setFeedbackOpen(feedbackBody?.hidden ?? true));
+	function revealFeedback() {
+		if (window.location.hash !== '#feedback-title') return;
+		setFeedbackOpen(true);
+	}
+	revealFeedback();
+	window.addEventListener('hashchange', revealFeedback);
+	document.querySelectorAll<HTMLAnchorElement>('a[href="#feedback-title"]').forEach((link) => {
+		link.addEventListener('click', () => {
+			setFeedbackOpen(true);
+		});
+	});
+</script>
+
+<style>
+	.article-footer { margin-top: 1.5rem; background: var(--md-sys-color-surface); }
+	.contribution { margin-top: 1rem; padding: 0.5rem 1.25rem; border-radius: var(--md-sys-shape-md); background: var(--md-sys-color-surface-container-low); }
+	.contribution-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+	.contribution-actions :global(.page-edit-link) { margin-inline-start: -0.75rem; }
+	.feedback-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; margin-inline-end: -0.75rem; padding: 0.5rem 0.75rem; border: 0; border-radius: var(--md-sys-shape-sm); background: transparent; color: var(--md-sys-color-primary); font: inherit; font-size: 0.875rem; font-weight: 500; line-height: 1.5; cursor: pointer; white-space: nowrap; }
+	.feedback-toggle:hover, .feedback-toggle[aria-expanded='true'] { background: var(--md-sys-color-secondary-container); }
+	.feedback-toggle[aria-expanded='true'] :global(svg:last-child) { transform: rotate(180deg); }
+	.feedback-toggle:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+	.feedback-body { margin-top: 0.5rem; padding: 1.5rem 0 1rem; border-top: 1px solid var(--md-sys-color-outline-variant); }
+	.feedback-body[hidden] { display: none; }
+	.last-updated { color: var(--md-sys-color-on-surface-variant); font-size: 0.875rem; text-align: end; }
+	.last-updated:empty { display: none; }
+	.last-updated :global(p) { margin: 0 0 1.5rem; }
+	.article-pagination:has(a) { margin-top: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--md-sys-color-outline-variant); }
+	.article-pagination :global(.pagination-links) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+	.article-pagination :global(.pagination-links > a) { align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0; border: 0; border-radius: 0; background: none; box-shadow: none; font-size: 0.75rem; line-height: 1.75; }
+	.article-pagination :global(.pagination-links .link-title) { display: inline-block; margin-top: 0.25rem; font-size: 1rem; font-weight: 500; line-height: 1.6; }
+	.article-pagination :global(.pagination-links > a:hover .link-title) { color: var(--md-sys-color-primary); text-decoration: underline; text-underline-offset: 0.25em; }
+	.article-pagination :global(.pagination-links svg) { margin-top: 0.25rem; width: 1rem; height: 1rem; }
+	.kudos { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; color: var(--md-sys-color-on-surface-variant); font-size: 0.75rem; text-decoration: none; }
+	@media (max-width: 35rem) {
+		.contribution { padding-inline: 1rem; }
+		.contribution-actions { gap: 0.5rem; }
+		.feedback-toggle { font-size: 0.8125rem; }
+		.contribution-actions :global(.page-edit-link) { font-size: 0.8125rem; }
+		.article-pagination :global(.pagination-links) { gap: 1.5rem; }
+		.article-pagination :global(.pagination-links .link-title) { font-size: 0.875rem; }
+	}
+	@media print { .contribution { display: none; } }
+</style>

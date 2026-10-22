@@ -1,0 +1,13 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { Icon } from '@astrojs/starlight/components';
+
+type Props = HTMLAttributes<'select'>;
+
+const { class: className, ...attributes } = Astro.props;
+---
+
+<div class="ui-select">
+	<select {...attributes} class:list={['ui-input', className]}><slot /></select>
+	<Icon name="down-caret" size="1rem" />
+</div>

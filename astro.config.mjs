@@ -17,6 +17,8 @@ export default defineConfig({
 		starlight({
 			title: 'Buct Wiki',
 			locales: { root: { label: '简体中文', lang: 'zh-CN' } },
+			editLink: { baseUrl: 'https://github.com/BUCTSNC/buct-wiki/edit/main/' },
+			routeMiddleware: './src/routeData.ts',
 			plugins: [
 				starlightThemeMd3({ seed: themeSeed, variant: 'tonalSpot' }),
 				wikiSurfaceColors(),
@@ -25,6 +27,7 @@ export default defineConfig({
 			components: {
 				PageFrame: './src/components/PageFrame.astro',
 				PageTitle: './src/components/PageTitle.astro',
+				Hero: './src/components/Hero.astro',
 				Footer: './src/components/Footer.astro',
 			},
 			sidebar: [

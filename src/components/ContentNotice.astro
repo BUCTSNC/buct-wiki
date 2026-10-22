@@ -1,0 +1,88 @@
+---
+import { contentLicenseUrl } from '../data/footer';
+import { Icon } from '@astrojs/starlight/components';
+
+interface Props { kind: 'reading' | 'license'; }
+const { kind } = Astro.props;
+const feedbackHref = `/feedback/?page=${encodeURIComponent(Astro.url.pathname)}`;
+---
+
+<div class:list={['content-notices', `content-notices--${kind}`]} data-pagefind-ignore>
+	{kind === 'license' && <details class="license-details">
+		<summary>
+			<span class="notice-copy">
+				<span class="note-intro">原创内容采用 CC BY-NC-SA 4.0</span>
+			</span>
+			<span class="notice-more">许可详情 <Icon name="down-caret" size="0.875rem" /></span>
+		</summary>
+		<dl class="notice-body">
+			<div>
+				<dt>原创内容</dt>
+				<dd>除另有注明及第三方材料外，本站原创内容采用 <a href={contentLicenseUrl} rel="license">CC BY-NC-SA 4.0</a> 许可协议。转载、传播或改编时，应保留作者署名、来源及许可链接，并注明所作修改；不得用于商业目的，改编作品须以相同许可共享。具体条件以许可协议为准。</dd>
+			</div>
+			<div>
+				<dt>学校文件与第三方材料</dt>
+				<dd>学校及其他第三方发布的文件、通知，以及引用的文字、图片和附件等材料，不属于本站 CC 许可的授权范围。相关权利归原权利人所有，使用时应保留来源与版权信息，并遵循原始来源的授权条件；需要另行取得授权的，应向权利人申请。如涉及署名、授权等权利问题，请权利人发送邮件至 <a href="mailto:wiki@snc.moe">wiki@snc.moe</a>，并提供原始来源、权利证明及相关说明，以便核查处理。</dd>
+			</div>
+		</dl>
+	</details>}
+
+	{kind === 'reading' && <details class="disclaimer-details">
+		<summary>
+			<span class="notice-copy">
+				<span class="note-intro"><strong>本站内容仅供参考</strong>，相关事项以学校最新正式通知为准。</span>
+			</span>
+			<span class="notice-more">详细说明 <Icon name="down-caret" size="0.875rem" /></span>
+		</summary>
+		<div class="notice-body">
+			<p>BUCT Wiki 为学生共同维护的校园信息与经验分享平台，非学校或相关部门的官方信息发布渠道。本站对文件、通知及办事流程的整理与解读仅供参考，具体事项应以原始文件及相关部门的正式答复为准。</p>
+			<p>本站内容可能因政策调整、适用条件差异或更新滞后而与实际情况不一致。涉及报名、申请、缴费等具体事项，使用者应核对学校及相关部门的最新正式通知，必要时向相关部门确认。</p>
+			<p>内容勘误、意见建议及其他一般事项，可通过<a href={feedbackHref}>内容反馈</a>或发送邮件至 <a href="mailto:wiki@snc.moe">wiki@snc.moe</a> 与本站联系；涉及署名、授权等权利问题，请权利人通过上述邮箱提交相关材料及说明，以便核查处理。</p>
+		</div>
+	</details>}
+</div>
+
+<style>
+	.content-notices {
+		color: var(--md-sys-color-on-surface-variant);
+		font-size: 0.875rem;
+		line-height: 1.85;
+	}
+	.content-notices--license { margin-top: 0.75rem; font-size: 0.8125rem; }
+	.content-notices--reading {
+		padding-inline: 1.125rem;
+		border-inline-start: 3px solid var(--md-sys-color-primary);
+		border-radius: var(--md-sys-shape-sm);
+		background: var(--md-sys-color-primary-container);
+		color: var(--md-sys-color-on-primary-container);
+	}
+	:global(:root[data-theme='light']) .content-notices--reading { background: var(--md-sys-color-surface-container-low); }
+	.content-notices--reading summary { padding-block: 0.875rem; }
+	.content-notices--reading strong { font-weight: 600; }
+	/* Keep the expanded note's bottom spacing inside its background. */
+	.content-notices--reading .notice-body { margin-bottom: 0; padding-bottom: 1.25rem; color: var(--md-sys-color-on-primary-container); }
+	summary { display: block; box-sizing: border-box; min-height: 2.75rem; padding: 0.5rem 0; border-radius: 0.25rem; list-style: none; cursor: pointer; }
+	summary::-webkit-details-marker { display: none; }
+	.notice-copy { display: inline; }
+	.note-intro { font-size: inherit; line-height: inherit; }
+	.notice-more { display: inline-flex; align-items: center; gap: 0.25rem; margin-inline-start: 0.5rem; color: var(--md-sys-color-primary); font-size: 0.8125rem; white-space: nowrap; }
+	details[open] .notice-more :global(svg) { transform: rotate(180deg); }
+	summary:hover .notice-more { text-decoration: underline; text-underline-offset: 0.2em; }
+	summary:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+	dl { display: grid; gap: 1rem; }
+	/* Both disclosures share the same reading width. */
+	.notice-body { max-width: 39em; margin: 0.75rem 0 1.25rem; font-size: 0.875rem; }
+	.notice-body p { margin: 0; }
+	.notice-body p + p { margin-top: 1rem; }
+	dl > div { display: grid; gap: 0.5rem; }
+	dt { color: var(--md-sys-color-on-surface); font-weight: 600; }
+	dd { margin: 0; overflow-wrap: anywhere; }
+	a { color: var(--sl-color-text-accent); text-underline-offset: 0.2em; }
+	a:hover { text-decoration: underline; }
+	a:focus-visible { outline: 2px solid var(--sl-color-text-accent); outline-offset: 3px; }
+	@media print {
+		.content-notices--reading { padding-inline: 0; border: 0; background: none; }
+		summary { padding-inline: 0; }
+		.notice-more { display: none; }
+	}
+</style>

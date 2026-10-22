@@ -1,18 +1,14 @@
 ---
 import DefaultPageFrame from '@astrojs/starlight/components/PageFrame.astro';
 import SiteFooter from './SiteFooter.astro';
-import sncSymbol from '../assets/snc-symbol.svg';
-import sncSymbolWhite from '../assets/snc-symbol-white.svg';
 
-const { hasSidebar } = Astro.locals.starlightRoute;
+const { hasSidebar, entry } = Astro.locals.starlightRoute;
+const leadingTitle = entry.body?.match(/^\s*#\s+([^\n]+?)[ \t]*(?:\r?\n|$)/)?.[1];
+const hasRepeatedTitle = !entry.data.hero && leadingTitle === entry.data.title;
 ---
 
 <div
-	class:list={['wiki-frame', { 'has-sidebar': hasSidebar }]}
-	style={{
-		'--snc-watermark-light': `url("${sncSymbol.src}")`,
-		'--snc-watermark-dark': `url("${sncSymbolWhite.src}")`,
-	}}
+	class:list={['wiki-frame', { 'has-sidebar': hasSidebar, 'has-repeated-title': hasRepeatedTitle }]}
 >
 	<DefaultPageFrame>
 		<slot name="header" slot="header" />
@@ -23,39 +19,20 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 </div>
 
 <style>
+	/* Show one primary title when the source repeats the page title. */
+	.has-repeated-title :global(.sl-markdown-content > :is(h1, .sl-heading-wrapper:has(> h1)):first-child) {
+		display: none;
+	}
+	.has-repeated-title :global(.sl-markdown-content > :is(h1, .sl-heading-wrapper:has(> h1)):first-child + *) {
+		margin-top: 0;
+	}
+
 	.has-sidebar :global(.main-pane) {
 		background-color: var(--md-sys-color-surface);
 	}
 
-	.has-sidebar :global(.main-pane > main > .content-panel:last-child) {
-		position: relative;
-		isolation: isolate;
-	}
-
-	.has-sidebar :global(.main-pane > main > .content-panel:last-child)::after {
-		content: '';
-		position: absolute;
-		z-index: -1;
-		inset-inline-end: 1.5rem;
-		inset-block-end: 8rem;
-		width: clamp(14rem, 26vw, 20rem);
-		aspect-ratio: 1;
-		background: var(--snc-watermark-light) center / contain no-repeat;
-		opacity: 0.045;
-		pointer-events: none;
-	}
-
-	:global([data-theme='dark']) .has-sidebar :global(.main-pane > main > .content-panel:last-child)::after {
-		background-image: var(--snc-watermark-dark);
-	}
-
-	@media (max-width: 50rem) {
-		.has-sidebar :global(.main-pane > main > .content-panel:last-child)::after {
-			inset-inline-end: 0.5rem;
-			width: 14rem;
-			opacity: 0.035;
-		}
-	}
+	/* The footer now begins with guidance that belongs directly after the article. */
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer)) { padding-bottom: 0; }
 
 	@media (min-width: 50rem) {
 		.has-sidebar :global(.page) {

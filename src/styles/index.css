@@ -1,4 +1,5 @@
 @import './table.css';
+@import './controls.css';
 
 :root {
 	--sl-font: 'Source Han Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;

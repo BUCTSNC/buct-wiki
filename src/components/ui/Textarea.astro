@@ -1,0 +1,9 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'textarea'>;
+
+const { class: className, rows = 5, value = '', ...attributes } = Astro.props;
+---
+
+<textarea {...attributes} rows={rows} class:list={['ui-input', className]}>{value}</textarea>

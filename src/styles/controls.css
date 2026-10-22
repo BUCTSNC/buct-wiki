@@ -1,0 +1,85 @@
+/* Shared form controls use the site's existing MD3 theme tokens. */
+.ui-input {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	min-height: 3rem;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--md-sys-color-outline);
+	border-radius: var(--md-sys-shape-sm);
+	background: var(--md-sys-color-surface);
+	color: var(--md-sys-color-on-surface);
+	font: inherit;
+	font-size: 1rem;
+	line-height: 1.5;
+	color-scheme: light dark;
+}
+
+:root[data-theme='light'] .ui-input { color-scheme: light; }
+:root[data-theme='dark'] .ui-input { color-scheme: dark; }
+.ui-input::placeholder { color: var(--md-sys-color-on-surface-variant); opacity: 1; }
+.ui-input:hover:not(:disabled) { border-color: var(--md-sys-color-on-surface); }
+.ui-input[aria-invalid='true'] { border-color: var(--md-sys-color-error); }
+textarea.ui-input { resize: vertical; }
+
+.ui-select { position: relative; width: 100%; }
+.ui-select select { appearance: none; padding-inline-end: 3rem; cursor: pointer; }
+.ui-select > svg {
+	position: absolute;
+	inset-inline-end: 1rem;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--md-sys-color-on-surface-variant);
+	pointer-events: none;
+}
+
+.ui-button {
+	display: inline-flex;
+	box-sizing: border-box;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	min-height: 2.75rem;
+	padding: 0.625rem 1.5rem;
+	border: 1px solid var(--ui-button-border, transparent);
+	border-radius: var(--md-sys-shape-full);
+	background: var(--ui-button-bg);
+	color: var(--ui-button-text);
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.5;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.ui-button--primary {
+	--ui-button-bg: var(--md-sys-color-primary);
+	--ui-button-text: var(--md-sys-color-on-primary);
+	--ui-button-hover-bg: var(--md-sys-color-on-primary-container);
+	--ui-button-hover-text: var(--md-sys-color-primary-container);
+}
+
+.ui-button--secondary {
+	--ui-button-bg: transparent;
+	--ui-button-text: var(--md-sys-color-primary);
+	--ui-button-border: var(--md-sys-color-outline-variant);
+	--ui-button-hover-bg: var(--md-sys-color-secondary-container);
+	--ui-button-hover-text: var(--md-sys-color-on-secondary-container);
+}
+
+.ui-button:hover:not(:disabled) {
+	background: var(--ui-button-hover-bg);
+	color: var(--ui-button-hover-text);
+	text-decoration: none;
+}
+.ui-button:active:not(:disabled) { transform: translateY(1px); }
+.ui-button:disabled { cursor: wait; background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface-variant); }
+.ui-input:disabled { cursor: wait; color: var(--md-sys-color-on-surface-variant); }
+.ui-input:focus-visible, .ui-button:focus-visible {
+	outline: 2px solid var(--md-sys-color-primary);
+	outline-offset: 3px;
+}
