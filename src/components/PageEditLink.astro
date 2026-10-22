@@ -39,6 +39,8 @@ const { editUrl } = Astro.locals.starlightRoute;
 		color: var(--md-sys-color-on-secondary-container);
 	}
 	.footer { padding-inline: 0.75rem; border-radius: var(--md-sys-shape-sm); color: var(--md-sys-color-primary); }
+	.footer:hover { background: color-mix(in srgb, currentColor 8%, transparent); color: var(--md-sys-color-primary); }
+	.footer:active { background: color-mix(in srgb, currentColor 12%, transparent); }
 	.page-edit-link:focus-visible {
 		outline: 2px solid var(--sl-color-text-accent);
 		outline-offset: 3px;

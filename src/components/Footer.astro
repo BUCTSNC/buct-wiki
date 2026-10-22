@@ -75,7 +75,8 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 	.contribution-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 	.contribution-actions :global(.page-edit-link) { margin-inline-start: -0.75rem; }
 	.feedback-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; margin-inline-end: -0.75rem; padding: 0.5rem 0.75rem; border: 0; border-radius: var(--md-sys-shape-sm); background: transparent; color: var(--md-sys-color-primary); font: inherit; font-size: 0.875rem; font-weight: 500; line-height: 1.5; cursor: pointer; white-space: nowrap; }
-	.feedback-toggle:hover, .feedback-toggle[aria-expanded='true'] { background: var(--md-sys-color-secondary-container); }
+	.feedback-toggle:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+	.feedback-toggle:active { background: color-mix(in srgb, currentColor 12%, transparent); }
 	.feedback-toggle :global(svg:last-child) { transition: transform 200ms ease; }
 	.feedback-toggle[aria-expanded='true'] :global(svg:last-child) { transform: rotate(180deg); }
 	.feedback-toggle:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
