@@ -28,7 +28,9 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 						)}
 					</div>
 					{feedback && (
-						<div id="article-feedback" class="feedback-body" hidden><FeedbackForm embedded /></div>
+						<div id="article-feedback" class="feedback-panel" hidden>
+							<div class="disclosure-content"><div class="feedback-body"><FeedbackForm embedded /></div></div>
+						</div>
 					)}
 				</section>
 			)}
@@ -74,10 +76,21 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 	.contribution-actions :global(.page-edit-link) { margin-inline-start: -0.75rem; }
 	.feedback-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; margin-inline-end: -0.75rem; padding: 0.5rem 0.75rem; border: 0; border-radius: var(--md-sys-shape-sm); background: transparent; color: var(--md-sys-color-primary); font: inherit; font-size: 0.875rem; font-weight: 500; line-height: 1.5; cursor: pointer; white-space: nowrap; }
 	.feedback-toggle:hover, .feedback-toggle[aria-expanded='true'] { background: var(--md-sys-color-secondary-container); }
+	.feedback-toggle :global(svg:last-child) { transition: transform 200ms ease; }
 	.feedback-toggle[aria-expanded='true'] :global(svg:last-child) { transform: rotate(180deg); }
 	.feedback-toggle:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+	.feedback-panel {
+		display: grid;
+		grid-template-rows: 1fr;
+		opacity: 1;
+		transition: grid-template-rows 200ms ease, opacity 200ms ease, display 200ms allow-discrete;
+	}
+	.feedback-panel[hidden] { display: none; grid-template-rows: 0fr; opacity: 0; }
+	@starting-style {
+		.feedback-panel:not([hidden]) { grid-template-rows: 0fr; opacity: 0; }
+	}
+	.disclosure-content { min-height: 0; overflow: hidden; margin-inline: -0.5rem; padding-inline: 0.5rem; }
 	.feedback-body { margin-top: 0.5rem; padding: 1.5rem 0 1rem; border-top: 1px solid var(--md-sys-color-outline-variant); }
-	.feedback-body[hidden] { display: none; }
 	.last-updated { color: var(--md-sys-color-on-surface-variant); font-size: 0.875rem; text-align: end; }
 	.last-updated:empty { display: none; }
 	.last-updated :global(p) { margin: 0 0 1.5rem; }
@@ -99,4 +112,7 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 		.article-pagination :global(.pagination-links .link-title) { font-size: 0.875rem; }
 	}
 	@media print { .contribution { display: none; } }
+	@media (prefers-reduced-motion: reduce) {
+		.feedback-panel, .feedback-toggle :global(svg:last-child) { transition: none; }
+	}
 </style>
