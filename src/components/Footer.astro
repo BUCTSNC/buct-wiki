@@ -8,16 +8,16 @@ import ContentNotice from './ContentNotice.astro';
 import PageEditLink from './PageEditLink.astro';
 
 const { entry, editUrl } = Astro.locals.starlightRoute;
-const { feedback } = entry.data;
-const isFeedbackPage = Astro.url.pathname.replace(/\/$/, '') === '/feedback';
+const { feedback, articleFooter, template } = entry.data;
+const showArticleFooter = entry.id !== '404' && template !== 'splash' && articleFooter;
 ---
 
 <!-- Keep reading guidance, contribution actions, and licensing in distinct groups. -->
 <footer class="article-footer" data-pagefind-ignore>
-	{entry.id !== '404' && (
+	{showArticleFooter && (
 		<>
-			{!isFeedbackPage && <ContentNotice kind="reading" />}
-			{!isFeedbackPage && (editUrl || feedback) && (
+			<ContentNotice kind="reading" />
+			{(editUrl || feedback) && (
 				<section class="contribution" aria-label="页面编辑与反馈">
 					<div class="contribution-actions">
 						<PageEditLink variant="footer" />
@@ -67,7 +67,8 @@ const isFeedbackPage = Astro.url.pathname.replace(/\/$/, '') === '/feedback';
 </script>
 
 <style>
-	.article-footer { margin-top: 1.5rem; background: var(--md-sys-color-surface); }
+	.article-footer { background: var(--md-sys-color-surface); }
+	.article-footer:has(.content-notices) { margin-top: 1.5rem; }
 	.contribution { margin-top: 1rem; padding: 0.5rem 1.25rem; border-radius: var(--md-sys-shape-md); background: var(--md-sys-color-surface-container-low); }
 	.contribution-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 	.contribution-actions :global(.page-edit-link) { margin-inline-start: -0.75rem; }

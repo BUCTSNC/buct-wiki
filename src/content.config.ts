@@ -11,6 +11,7 @@ export const collections = {
 				type: z.enum(['general', 'official', 'experience']).default('general'),
 				tags: z.array(z.string()).default([]),
 				feedback: z.boolean().default(true),
+				articleFooter: z.boolean().default(true),
 			}),
 		}),
 	}),
