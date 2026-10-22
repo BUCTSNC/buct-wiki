@@ -1,6 +1,8 @@
 ---
 import DefaultPageFrame from '@astrojs/starlight/components/PageFrame.astro';
 import SiteFooter from './SiteFooter.astro';
+import sncSymbol from '../assets/snc-symbol.svg';
+import sncSymbolWhite from '../assets/snc-symbol-white.svg';
 
 const { hasSidebar, entry } = Astro.locals.starlightRoute;
 const leadingTitle = entry.body?.match(/^\s*#\s+([^\n]+?)[ \t]*(?:\r?\n|$)/)?.[1];
@@ -9,6 +11,7 @@ const hasRepeatedTitle = !entry.data.hero && leadingTitle === entry.data.title;
 
 <div
 	class:list={['wiki-frame', { 'has-sidebar': hasSidebar, 'has-repeated-title': hasRepeatedTitle }]}
+	style={{ '--snc-symbol': `url("${sncSymbol.src}")`, '--snc-symbol-white': `url("${sncSymbolWhite.src}")` }}
 >
 	<DefaultPageFrame>
 		<slot name="header" slot="header" />
@@ -33,6 +36,35 @@ const hasRepeatedTitle = !entry.data.hero && leadingTitle === entry.data.title;
 
 	/* The footer now begins with guidance that belongs directly after the article. */
 	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer)) { padding-bottom: 0; }
+
+	/* Anchor the watermark to the article, independently of expanding footer controls. */
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)) {
+		position: relative;
+		isolation: isolate;
+	}
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
+		content: '';
+		position: absolute;
+		z-index: -1;
+		right: 1rem;
+		bottom: 0;
+		width: clamp(14rem, 26vw, 20rem);
+		max-width: 70%;
+		max-height: 100%;
+		aspect-ratio: 1;
+		background: var(--snc-symbol) center / contain no-repeat;
+		opacity: 0.045;
+		pointer-events: none;
+	}
+	:global([data-theme='dark']) .wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
+		background-image: var(--snc-symbol-white);
+	}
+	@media (max-width: 49.99rem) {
+		.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
+			right: 0;
+			opacity: 0.035;
+		}
+	}
 
 	@media (min-width: 50rem) {
 		.has-sidebar :global(.page) {
