@@ -1,0 +1,60 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+const { dir, pagination } = Astro.locals.starlightRoute;
+const isRtl = dir === 'rtl';
+const links = [
+	{ direction: 'prev', page: pagination.prev, label: Astro.locals.t('page.previousLink'), icon: isRtl ? 'right-arrow' : 'left-arrow' },
+	{ direction: 'next', page: pagination.next, label: Astro.locals.t('page.nextLink'), icon: isRtl ? 'left-arrow' : 'right-arrow' },
+] as const;
+---
+
+<div class="pagination-links print:hidden" dir={dir}>
+	{links.map(({ direction, page, label, icon }) => page && (
+		<a href={page.href} rel={direction}>
+			<span class="pagination-direction">
+				<Icon name={icon} size="1rem" />
+				<span>{label}</span>
+			</span>
+			<span class="link-title">{page.label}</span>
+		</a>
+	))}
+</div>
+
+<style>
+	.pagination-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+	/* Refactoring UI §3.3.1: give mobile titles the full card width. */
+	a {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+		min-width: 0;
+		min-height: 6rem;
+		padding: 1rem 1.125rem;
+		border: 1px solid var(--md-sys-color-outline-variant);
+		border-radius: var(--md-sys-shape-md);
+		background: transparent;
+		color: var(--md-sys-color-on-surface-variant);
+		box-shadow: none;
+		font-size: 0.75rem;
+		line-height: 1.75;
+		text-decoration: none;
+		overflow-wrap: anywhere;
+	}
+	a[rel='prev'] { grid-column: 1; grid-row: 1; }
+	a[rel='next'] { grid-column: 2; grid-row: 1; text-align: end; }
+	.pagination-direction { display: flex; align-items: center; gap: 0.5rem; }
+	a[rel='next'] .pagination-direction { flex-direction: row-reverse; }
+	.pagination-direction :global(svg) { flex: none; }
+	.link-title { color: var(--md-sys-color-on-surface); font-size: 1rem; font-weight: 500; line-height: 1.6; }
+	a:hover { border-color: var(--md-sys-color-primary); background: var(--md-sys-color-surface-container-low); }
+	a:hover .link-title { color: var(--md-sys-color-primary); }
+	a:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+	@media (max-width: 35rem) {
+		.pagination-links { gap: 0.75rem; }
+		a { padding: 0.75rem; }
+		.link-title { font-size: 0.875rem; }
+	}
+	@media print { .pagination-links { display: none; } }
+</style>

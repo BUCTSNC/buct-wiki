@@ -1,7 +1,7 @@
 ---
 import { Icon } from '@astrojs/starlight/components';
 import LastUpdated from 'virtual:starlight/components/LastUpdated';
-import Pagination from 'virtual:starlight/components/Pagination';
+import ArticlePagination from './ArticlePagination.astro';
 import config from 'virtual:starlight/user-config';
 import FeedbackForm from './FeedbackForm.astro';
 import ContentNotice from './ContentNotice.astro';
@@ -38,7 +38,7 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 		</>
 	)}
 	<div class="last-updated"><LastUpdated /></div>
-	<div class="article-pagination"><Pagination /></div>
+	<div class="article-pagination"><ArticlePagination /></div>
 	{config.credits && (
 		<a class="kudos" href="https://starlight.astro.build">
 			<Icon name="starlight" /> {Astro.locals.t('builtWithStarlight.label')}
@@ -95,16 +95,8 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 	.last-updated { color: var(--md-sys-color-on-surface-variant); font-size: 0.875rem; text-align: end; }
 	.last-updated:empty { display: none; }
 	.last-updated :global(p) { margin: 0 0 1.5rem; }
-	.article-pagination:has(a) { margin-top: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--md-sys-color-outline-variant); }
-	.article-pagination :global(.pagination-links) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-	.article-pagination :global(.pagination-links > a) { align-items: flex-start; gap: 0.75rem; min-width: 0; min-height: 6rem; padding: 1rem 1.125rem; border: 1px solid var(--md-sys-color-outline-variant); border-radius: var(--md-sys-shape-md); background: transparent; box-shadow: none; font-size: 0.75rem; line-height: 1.75; }
-	.article-pagination :global(.pagination-links > a:hover) { border-color: var(--md-sys-color-primary); background: var(--md-sys-color-surface-container-low); }
-	.article-pagination :global(.pagination-links > a:focus-visible) { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
-	.article-pagination :global(.pagination-links > a[rel='prev']) { grid-column: 1; grid-row: 1; }
-	.article-pagination :global(.pagination-links > a[rel='next']) { grid-column: 2; grid-row: 1; }
-	.article-pagination :global(.pagination-links .link-title) { display: inline-block; margin-top: 0.25rem; font-size: 1rem; font-weight: 500; line-height: 1.6; }
-	.article-pagination :global(.pagination-links > a:hover .link-title) { color: var(--md-sys-color-primary); }
-	.article-pagination :global(.pagination-links svg) { margin-top: 0.25rem; width: 1rem; height: 1rem; }
+	/* Refactoring UI §8.5: separate the outlined cards with space, without another border. */
+	.article-pagination:has(a) { margin-top: 2rem; }
 	.kudos { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; color: var(--md-sys-color-on-surface-variant); font-size: 0.75rem; text-decoration: none; }
 	@media (max-width: 35rem) {
 		.article-footer:has(.content-notices) { margin-top: 2.5rem; }
@@ -112,9 +104,6 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 		.contribution-actions { gap: 0.5rem; }
 		.feedback-toggle { font-size: 0.8125rem; }
 		.contribution-actions :global(.page-edit-link) { font-size: 0.8125rem; }
-		.article-pagination :global(.pagination-links) { gap: 0.75rem; }
-		.article-pagination :global(.pagination-links > a) { gap: 0.5rem; padding: 0.75rem; }
-		.article-pagination :global(.pagination-links .link-title) { font-size: 0.875rem; }
 	}
 	@media print { .contribution { display: none; } }
 	@media (prefers-reduced-motion: reduce) {
