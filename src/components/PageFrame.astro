@@ -58,6 +58,7 @@ const hasRepeatedTitle = !entry.data.hero && leadingTitle === entry.data.title;
 	}
 	:global([data-theme='dark']) .wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
 		background-image: var(--snc-symbol-white);
+		opacity: 0.1;
 	}
 	@media (max-width: 49.99rem) {
 		.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
