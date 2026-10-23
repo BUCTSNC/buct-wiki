@@ -32,6 +32,7 @@ export default defineConfig({
 			},
 			sidebar: [
 				{ label: '序', slug: '序' },
+				{ label: '免责声明', slug: '免责声明' },
 				{
 					label: '简介',
 					items: [{ autogenerate: { directory: 'content/简介' } }],
