@@ -3,6 +3,11 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import FeedbackForm from '../components/FeedbackForm.astro';
 ---
 
-<StarlightPage frontmatter={{ title: '内容反馈', feedback: false }}>
+<StarlightPage frontmatter={{
+	title: '内容反馈',
+	feedback: false,
+	articleFooter: false,
+	editUrl: 'https://github.com/BUCTSNC/buct-wiki/edit/main/src/pages/feedback.astro',
+}}>
 	<FeedbackForm standalone />
 </StarlightPage>

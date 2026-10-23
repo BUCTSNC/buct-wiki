@@ -22,6 +22,8 @@ const { item } = Astro.props;
 	frontmatter={{
 		title: `标签：${item.tag}`,
 		description: `带有“${item.tag}”标签的文章列表`,
+		articleFooter: false,
+		editUrl: 'https://github.com/BUCTSNC/buct-wiki/edit/main/src/pages/tags/%5Btag%5D.astro',
 	}}
 >
 	<p>共有 {item.entries.length} 篇文章。</p>

@@ -1,5 +1,6 @@
 ---
 import { Badge } from '@astrojs/starlight/components';
+import PageEditLink from './PageEditLink.astro';
 import PageViews from "./PageViews.astro";
 import contributorsByDoc from '../../.output/contributors.json';
 import lastModifiedByDoc from '../../.output/last-modified.json';
@@ -22,26 +23,19 @@ const lastModifiedLabel = lastModified && new Date(lastModified).toLocaleDateStr
 });
 ---
 
-<h1
-	id="_top"
-	style="display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; font-size: var(--sl-text-h1); line-height: var(--sl-line-height-headings); font-weight: 600; color: var(--sl-color-white);"
->
-	{typeLabel && (
-		<span
-			style="flex: none; padding: 0.15em 0.45em; border: 1px solid var(--sl-color-accent); border-radius: 0.35rem; color: var(--sl-color-accent-high); font-size: 0.45em; line-height: 1.4;"
-		>
-			{typeLabel}
-		</span>
-	)}
-	{entry.data.title}
-</h1>
+<div class="page-heading">
+	<h1 id="_top">
+		{typeLabel && (
+			<span class="type-label">{typeLabel}</span>
+		)}
+		<span>{entry.data.title}</span>
+	</h1>
+	<PageEditLink />
+</div>
 
 {
 	tags.length > 0 && (
-		<ul
-			aria-label="标签"
-			style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; margin: 1rem 0 0; list-style: none;"
-		>
+		<ul class="article-tags" aria-label="标签">
 			{
 				tags.map((tag) => (
 				<li>
@@ -54,29 +48,30 @@ const lastModifiedLabel = lastModified && new Date(lastModified).toLocaleDateStr
 	)
 }
 
+<div class="article-meta">
 {
 	lastModified && (
-		<p style="margin: 1rem 0 0; color: var(--sl-color-gray-3);">
-			最后修改于 <time datetime={lastModified}>{lastModifiedLabel}</time>
+		<p>
+			更新于 <time datetime={lastModified}>{lastModifiedLabel}</time>
 		</p>
 	)
 }
 
 {
 	contributors.length > 0 && (
-		<div aria-label="本文编辑者" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+		<div class="contributors" aria-label="本文编辑者">
 			<span>编辑者</span>
-			<ul style="display: flex; gap: 0.5rem; padding: 0; margin: 0; list-style: none;">
+			<ul>
 				{contributors.map((contributor) => (
 					<li>
 						{contributor.profile ? (
 							<a href={contributor.profile} title={`${contributor.name}（${contributor.commits} 次提交）`}>
-								<img src={contributor.avatar} alt={contributor.name} width="28" height="28" loading="lazy" style="display: block; border-radius: 50%;" />
+								<img src={contributor.avatar} alt={contributor.name} width="24" height="24" loading="lazy" />
 							</a>
 						) : (
 							<span
+								class="contributor-initial"
 								title={`${contributor.name}（${contributor.commits} 次提交）`}
-								style="display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--sl-color-gray-5);"
 							>
 								{contributor.name.slice(0, 1)}
 							</span>
@@ -89,3 +84,66 @@ const lastModifiedLabel = lastModified && new Date(lastModified).toLocaleDateStr
 }
 
 <PageViews />
+</div>
+
+<style>
+	.page-heading {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: start;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+	.page-heading h1 {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin: 0;
+		min-width: 0;
+		color: var(--md-sys-color-on-surface);
+		font-size: var(--sl-text-h1);
+		font-weight: 600;
+		line-height: var(--sl-line-height-headings);
+		text-wrap: balance;
+		overflow-wrap: anywhere;
+	}
+	h1 > span:last-child { min-width: 0; }
+	.type-label {
+		flex: none;
+		padding: 0.25rem 0.5rem;
+		border-radius: var(--md-sys-shape-sm);
+		background: var(--md-sys-color-secondary-container);
+		color: var(--md-sys-color-on-secondary-container);
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1.5;
+	}
+	.article-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+	.article-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem 1.5rem;
+		margin-top: 1rem;
+		color: var(--md-sys-color-on-surface-variant);
+		font-size: 0.875rem;
+		line-height: 1.5;
+	}
+	.article-meta p { margin: 0; }
+	.contributors, .contributors ul { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+	.contributors ul { margin: 0; padding: 0; list-style: none; }
+	.contributors img { display: block; border-radius: var(--md-sys-shape-full); object-fit: cover; }
+	.contributor-initial {
+		display: grid;
+		place-items: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: var(--md-sys-shape-full);
+		background: var(--md-sys-color-secondary-container);
+		color: var(--md-sys-color-on-secondary-container);
+	}
+	@media (max-width: 35rem) {
+		.page-heading h1 { font-size: var(--sl-text-3xl); }
+		.article-meta { gap: 0.75rem 1rem; }
+	}
+</style>

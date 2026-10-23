@@ -1,9 +1,111 @@
 ---
-import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
+import { Icon } from '@astrojs/starlight/components';
+import LastUpdated from 'virtual:starlight/components/LastUpdated';
+import ArticlePagination from './ArticlePagination.astro';
+import config from 'virtual:starlight/user-config';
 import FeedbackForm from './FeedbackForm.astro';
+import ContentNotice from './ContentNotice.astro';
+import PageEditLink from './PageEditLink.astro';
 
-const { feedback } = Astro.locals.starlightRoute.entry.data;
+const { entry, editUrl } = Astro.locals.starlightRoute;
+const { feedback, articleFooter, template } = entry.data;
+const showArticleFooter = entry.id !== '404' && template !== 'splash' && articleFooter;
 ---
 
-{feedback && <FeedbackForm />}
-<DefaultFooter />
+<!-- Keep reading guidance, contribution actions, and licensing in distinct groups. -->
+<footer class="article-footer" data-pagefind-ignore>
+	{showArticleFooter && (
+		<>
+			<ContentNotice kind="reading" />
+			{(editUrl || feedback) && (
+				<section class="contribution" aria-label="页面编辑与反馈">
+					<div class="contribution-actions">
+						<PageEditLink variant="footer" />
+						{feedback && (
+							<button class="feedback-toggle" type="button" id="feedback-title" aria-expanded="false" aria-controls="article-feedback">
+								<Icon name="comment" size="1rem" /><span>反馈内容问题</span><Icon name="down-caret" size="0.875rem" />
+							</button>
+						)}
+					</div>
+					{feedback && (
+						<div id="article-feedback" class="feedback-panel" hidden>
+							<div class="disclosure-content"><div class="feedback-body"><FeedbackForm embedded /></div></div>
+						</div>
+					)}
+				</section>
+			)}
+			<ContentNotice kind="license" />
+		</>
+	)}
+	<div class="last-updated"><LastUpdated /></div>
+	<div class="article-pagination"><ArticlePagination /></div>
+	{config.credits && (
+		<a class="kudos" href="https://starlight.astro.build">
+			<Icon name="starlight" /> {Astro.locals.t('builtWithStarlight.label')}
+		</a>
+	)}
+</footer>
+
+<script>
+	const feedbackToggle = document.querySelector<HTMLButtonElement>('.feedback-toggle');
+	const feedbackBody = document.querySelector<HTMLElement>('#article-feedback');
+	function setFeedbackOpen(open: boolean) {
+		if (!feedbackToggle || !feedbackBody) return;
+		feedbackBody.hidden = !open;
+		feedbackToggle.setAttribute('aria-expanded', String(open));
+	}
+	feedbackToggle?.addEventListener('click', () => setFeedbackOpen(feedbackBody?.hidden ?? true));
+	function revealFeedback() {
+		if (window.location.hash !== '#feedback-title') return;
+		setFeedbackOpen(true);
+	}
+	revealFeedback();
+	window.addEventListener('hashchange', revealFeedback);
+	document.querySelectorAll<HTMLAnchorElement>('a[href="#feedback-title"]').forEach((link) => {
+		link.addEventListener('click', () => {
+			setFeedbackOpen(true);
+		});
+	});
+</script>
+
+<style>
+	.article-footer { background: var(--md-sys-color-surface); }
+	.article-footer:has(.content-notices) { margin-top: 0; }
+	.contribution { margin-top: 1rem; padding: 0.5rem 1.25rem; border-radius: var(--md-sys-shape-md); background: var(--md-sys-color-surface-container-low); }
+	.contribution-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+	.contribution-actions :global(.page-edit-link) { margin-inline-start: -0.75rem; }
+	.feedback-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; margin-inline-end: -0.75rem; padding: 0.5rem 0.75rem; border: 0; border-radius: var(--md-sys-shape-sm); background: transparent; color: var(--md-sys-color-primary); font: inherit; font-size: 0.875rem; font-weight: 500; line-height: 1.5; cursor: pointer; white-space: nowrap; }
+	.feedback-toggle:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+	.feedback-toggle:active { background: color-mix(in srgb, currentColor 12%, transparent); }
+	.feedback-toggle :global(svg:last-child) { transition: transform 200ms ease; }
+	.feedback-toggle[aria-expanded='true'] :global(svg:last-child) { transform: rotate(180deg); }
+	.feedback-toggle:focus-visible { outline: 2px solid var(--md-sys-color-primary); outline-offset: 3px; }
+	.feedback-panel {
+		display: grid;
+		grid-template-rows: 1fr;
+		opacity: 1;
+		transition: grid-template-rows 200ms ease, opacity 200ms ease, display 200ms allow-discrete;
+	}
+	.feedback-panel[hidden] { display: none; grid-template-rows: 0fr; opacity: 0; }
+	@starting-style {
+		.feedback-panel:not([hidden]) { grid-template-rows: 0fr; opacity: 0; }
+	}
+	.disclosure-content { min-height: 0; overflow: hidden; margin-inline: -0.5rem; padding-inline: 0.5rem; }
+	.feedback-body { margin-top: 0.5rem; padding: 1.5rem 0 1rem; border-top: 1px solid var(--md-sys-color-outline-variant); }
+	.last-updated { color: var(--md-sys-color-on-surface-variant); font-size: 0.875rem; text-align: end; }
+	.last-updated:empty { display: none; }
+	.last-updated :global(p) { margin: 0 0 1.5rem; }
+	/* Refactoring UI §8.5: separate the outlined cards with space, without another border. */
+	.article-pagination:has(a) { margin-top: 2rem; }
+	.kudos { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; color: var(--md-sys-color-on-surface-variant); font-size: 0.75rem; text-decoration: none; }
+	@media (max-width: 35rem) {
+		.contribution { padding-inline: 1rem; }
+		.contribution-actions { gap: 0.5rem; }
+		.feedback-toggle { font-size: 0.8125rem; }
+		.contribution-actions :global(.page-edit-link) { font-size: 0.8125rem; }
+	}
+	@media print { .contribution { display: none; } }
+	@media (prefers-reduced-motion: reduce) {
+		.feedback-panel, .feedback-toggle :global(svg:last-child) { transition: none; }
+	}
+</style>

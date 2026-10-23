@@ -1,0 +1,53 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+interface Props {
+	variant?: 'subtle' | 'footer';
+}
+
+const { variant = 'subtle' } = Astro.props;
+const { editUrl } = Astro.locals.starlightRoute;
+---
+
+{editUrl && (
+	<a class:list={['page-edit-link', variant]} href={editUrl} aria-label={Astro.locals.t('page.editLink')} data-pagefind-ignore>
+		<Icon name="pencil" size="1rem" />
+		<span>{Astro.locals.t('page.editLink')}</span>
+	</a>
+)}
+
+<style>
+	.page-edit-link {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: 2.75rem;
+		padding-inline: 1rem;
+		border-radius: var(--md-sys-shape-full);
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1.5;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.subtle { color: var(--md-sys-color-on-surface-variant); }
+	.subtle :global(svg) { color: var(--md-sys-color-primary); }
+	.page-edit-link:hover {
+		background: var(--md-sys-color-secondary-container);
+		color: var(--md-sys-color-on-secondary-container);
+	}
+	.footer { padding-inline: 0.75rem; border-radius: var(--md-sys-shape-sm); color: var(--md-sys-color-primary); }
+	.footer:hover { background: color-mix(in srgb, currentColor 8%, transparent); color: var(--md-sys-color-primary); }
+	.footer:active { background: color-mix(in srgb, currentColor 12%, transparent); }
+	.page-edit-link:focus-visible {
+		outline: 2px solid var(--sl-color-text-accent);
+		outline-offset: 3px;
+	}
+	@media (max-width: 35rem) {
+		.subtle { width: 2.75rem; padding: 0; background: var(--md-sys-color-surface-container); }
+		.subtle span { display: none; }
+	}
+	@media print { .page-edit-link { display: none; } }
+</style>

@@ -1,0 +1,12 @@
+---
+import DefaultHero from '@astrojs/starlight/components/Hero.astro';
+import PageEditLink from './PageEditLink.astro';
+---
+
+<div class="hero-edit"><PageEditLink /></div>
+<DefaultHero />
+
+<style>
+	.hero-edit { display: flex; justify-content: flex-end; }
+	.hero-edit:empty { display: none; }
+</style>

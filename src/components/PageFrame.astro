@@ -4,15 +4,14 @@ import SiteFooter from './SiteFooter.astro';
 import sncSymbol from '../assets/snc-symbol.svg';
 import sncSymbolWhite from '../assets/snc-symbol-white.svg';
 
-const { hasSidebar } = Astro.locals.starlightRoute;
+const { hasSidebar, entry } = Astro.locals.starlightRoute;
+const leadingTitle = entry.body?.match(/^\s*#\s+([^\n]+?)[ \t]*(?:\r?\n|$)/)?.[1];
+const hasRepeatedTitle = !entry.data.hero && leadingTitle === entry.data.title;
 ---
 
 <div
-	class:list={['wiki-frame', { 'has-sidebar': hasSidebar }]}
-	style={{
-		'--snc-watermark-light': `url("${sncSymbol.src}")`,
-		'--snc-watermark-dark': `url("${sncSymbolWhite.src}")`,
-	}}
+	class:list={['wiki-frame', { 'has-sidebar': hasSidebar, 'has-repeated-title': hasRepeatedTitle }]}
+	style={{ '--snc-symbol': `url("${sncSymbol.src}")`, '--snc-symbol-white': `url("${sncSymbolWhite.src}")` }}
 >
 	<DefaultPageFrame>
 		<slot name="header" slot="header" />
@@ -23,40 +22,52 @@ const { hasSidebar } = Astro.locals.starlightRoute;
 </div>
 
 <style>
+	/* Show one primary title when the source repeats the page title. */
+	.has-repeated-title :global(.sl-markdown-content > :is(h1, .sl-heading-wrapper:has(> h1)):first-child) {
+		display: none;
+	}
+	.has-repeated-title :global(.sl-markdown-content > :is(h1, .sl-heading-wrapper:has(> h1)):first-child + *) {
+		margin-top: 0;
+	}
+
 	.has-sidebar :global(.main-pane) {
 		background-color: var(--md-sys-color-surface);
 	}
 
-	.has-sidebar :global(.main-pane > main > .content-panel:last-child) {
+	/* Utility pages do not need the article's closing space. */
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer)) { padding-bottom: 0; }
+
+	/* Include the closing space in the article so its watermark follows that space. */
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)) {
+		--article-watermark-size: min(clamp(14rem, 26vw, 20rem), 70%);
 		position: relative;
 		isolation: isolate;
+		padding-bottom: calc(var(--article-watermark-size) * 0.25);
 	}
-
-	.has-sidebar :global(.main-pane > main > .content-panel:last-child)::after {
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices) > :last-child) { margin-bottom: 0; }
+	.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
 		content: '';
 		position: absolute;
 		z-index: -1;
-		inset-inline-end: 1.5rem;
-		inset-block-end: 8rem;
-		width: clamp(14rem, 26vw, 20rem);
+		right: 1rem;
+		bottom: 0;
+		width: var(--article-watermark-size);
+		max-height: 100%;
 		aspect-ratio: 1;
-		background: var(--snc-watermark-light) center / contain no-repeat;
+		background: var(--snc-symbol) center / contain no-repeat;
 		opacity: 0.045;
 		pointer-events: none;
 	}
-
-	:global([data-theme='dark']) .has-sidebar :global(.main-pane > main > .content-panel:last-child)::after {
-		background-image: var(--snc-watermark-dark);
+	:global([data-theme='dark']) .wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
+		background-image: var(--snc-symbol-white);
+		opacity: 0.1;
 	}
-
-	@media (max-width: 50rem) {
-		.has-sidebar :global(.main-pane > main > .content-panel:last-child)::after {
-			inset-inline-end: 0.5rem;
-			width: 14rem;
+	@media (max-width: 49.99rem) {
+		.wiki-frame :global(.sl-markdown-content:has(+ .article-footer > .content-notices)::after) {
+			right: 0;
 			opacity: 0.035;
 		}
 	}
-
 	@media (min-width: 50rem) {
 		.has-sidebar :global(.page) {
 			display: grid;

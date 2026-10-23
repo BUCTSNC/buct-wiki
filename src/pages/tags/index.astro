@@ -5,7 +5,12 @@ import { getTagIndex } from '../../utils/tags';
 const tagIndex = await getTagIndex();
 ---
 
-<StarlightPage frontmatter={{ title: '标签', description: '按标签浏览文章' }}>
+<StarlightPage frontmatter={{
+	title: '标签',
+	description: '按标签浏览文章',
+	articleFooter: false,
+	editUrl: 'https://github.com/BUCTSNC/buct-wiki/edit/main/src/pages/tags/index.astro',
+}}>
 	<p>共有 {tagIndex.length} 个标签。</p>
 
 	<ul class="tag-list">
