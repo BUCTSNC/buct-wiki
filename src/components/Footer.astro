@@ -70,7 +70,7 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 
 <style>
 	.article-footer { background: var(--md-sys-color-surface); }
-	.article-footer:has(.content-notices) { margin-top: 3rem; }
+	.article-footer:has(.content-notices) { margin-top: 0; }
 	.contribution { margin-top: 1rem; padding: 0.5rem 1.25rem; border-radius: var(--md-sys-shape-md); background: var(--md-sys-color-surface-container-low); }
 	.contribution-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 	.contribution-actions :global(.page-edit-link) { margin-inline-start: -0.75rem; }
@@ -99,7 +99,6 @@ const showArticleFooter = entry.id !== '404' && template !== 'splash' && article
 	.article-pagination:has(a) { margin-top: 2rem; }
 	.kudos { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; color: var(--md-sys-color-on-surface-variant); font-size: 0.75rem; text-decoration: none; }
 	@media (max-width: 35rem) {
-		.article-footer:has(.content-notices) { margin-top: 2.5rem; }
 		.contribution { padding-inline: 1rem; }
 		.contribution-actions { gap: 0.5rem; }
 		.feedback-toggle { font-size: 0.8125rem; }
